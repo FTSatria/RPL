@@ -1,0 +1,1074 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>RPM Pemodelan Perangkat Lunak</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=JetBrains+Mono:wght@400;600&family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+/* Layout: kepala halaman rata kiri dengan motif class diagram, tab navigasi lengket, satu panel aktif per tab, komponen interaktif di dalam panel. */
+:root {
+  --bg:#f2f6f5; --surface:#ffffff; --surface-2:#e8f0ef; --fg:#10262a; --muted:#4e666b; --line:#cfdddc;
+  --accent:#0a7468; --accent-soft:#d3ede9; --accent-ink:#ffffff;
+  --amber:#a86400; --amber-soft:#fbebcf; --blue:#1d68a8; --blue-soft:#dcebf8;
+  --green:#1f7a49; --green-soft:#d9f0e2; --red:#b3372f; --red-soft:#f8dedb;
+  --code-bg:#0f2a2e; --code-fg:#d8ece9;
+  --f-display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --f-body:'Source Sans 3','Segoe UI',system-ui,sans-serif;
+  --f-mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg:#0c1a1d; --surface:#132629; --surface-2:#1a3236; --fg:#e3eeed; --muted:#93acaf; --line:#27434a;
+  --accent:#45c7b6; --accent-soft:#16413f; --accent-ink:#06211f;
+  --amber:#f0b64f; --amber-soft:#40310f; --blue:#6fb4ee; --blue-soft:#17344d;
+  --green:#5fd08f; --green-soft:#143a26; --red:#f08a82; --red-soft:#4a1f1c;
+  --code-bg:#07161a; --code-fg:#cfe6e3; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg:#0c1a1d; --surface:#132629; --surface-2:#1a3236; --fg:#e3eeed; --muted:#93acaf; --line:#27434a;
+  --accent:#45c7b6; --accent-soft:#16413f; --accent-ink:#06211f;
+  --amber:#f0b64f; --amber-soft:#40310f; --blue:#6fb4ee; --blue-soft:#17344d;
+  --green:#5fd08f; --green-soft:#143a26; --red:#f08a82; --red-soft:#4a1f1c;
+  --code-bg:#07161a; --code-fg:#cfe6e3; color-scheme: dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.6;margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+h1,h2,h3,h4{font-family:var(--f-display);line-height:1.2;text-wrap:balance;margin:0}
+h2{font-size:1.65rem;font-weight:700}
+h3{font-size:1.2rem;font-weight:700}
+h4{font-size:1rem;font-weight:700}
+p{margin:0}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.mono{font-family:var(--f-mono)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button{font:inherit;color:inherit;cursor:pointer}
+
+/* hero */
+.hero{border-bottom:1px solid var(--line);background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:28px 28px;background-position:-1px -1px}
+.hero-in{display:flex;gap:32px;align-items:center;justify-content:space-between;padding-block:36px 32px}
+.hero-txt{min-width:0;flex:1 1 480px}
+.eyebrow{font-family:var(--f-mono);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.hero h1{font-size:clamp(2rem,5vw,3.2rem);font-weight:700;margin:8px 0 6px}
+.hero .sub{font-size:1.15rem;color:var(--muted);max-width:52ch}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:4px;font-size:.85rem;font-weight:600;background:var(--surface);border:1px solid var(--line)}
+.chip.mindful{color:var(--blue);background:var(--blue-soft);border-color:transparent}
+.chip.meaning{color:var(--amber);background:var(--amber-soft);border-color:transparent}
+.chip.joyful{color:var(--green);background:var(--green-soft);border-color:transparent}
+.hero-art{flex:0 0 300px;background:var(--surface);border:1px solid var(--line);padding:10px}
+@media (max-width:760px){.hero-art{display:none}}
+
+/* tabs */
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+.tabs-in{display:flex;gap:2px;overflow-x:auto;scrollbar-width:thin}
+.tab{flex:0 0 auto;border:0;background:none;padding:12px 14px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent;text-decoration:none;white-space:nowrap}
+.tab:hover{color:var(--fg)}
+.tab[aria-current="page"]{color:var(--accent);border-bottom-color:var(--accent)}
+
+main{padding-block:28px 40px}
+.sec-head{display:flex;flex-direction:column;gap:6px;margin-bottom:22px}
+.sec-head p{color:var(--muted);max-width:70ch}
+.panel{background:var(--surface);border:1px solid var(--line);padding:20px;min-width:0}
+.stack{display:flex;flex-direction:column;gap:20px}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:20px}
+.cols>*{min-width:0}
+.label{font-family:var(--f-mono);font-size:.75rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600}
+
+/* info table */
+.kv{display:grid;grid-template-columns:minmax(120px,220px) 1fr;margin:0}
+.kv dt,.kv dd{margin:0;padding:10px 0;border-bottom:1px solid var(--line)}
+.kv dt{font-weight:600;color:var(--muted)}
+.kv dd{min-width:0;overflow-wrap:anywhere}
+.kv dt:last-of-type,.kv dd:last-of-type{border-bottom:0}
+@media (max-width:560px){.kv{grid-template-columns:1fr}.kv dt{border-bottom:0;padding-bottom:0}}
+.tag{display:inline-block;padding:1px 9px;border-radius:4px;font-size:.88rem;font-weight:600;background:var(--accent-soft);color:var(--accent)}
+.tag.amber{background:var(--amber-soft);color:var(--amber)}
+.tag.blue{background:var(--blue-soft);color:var(--blue)}
+
+/* DPL */
+.dpl{display:grid;grid-template-columns:72px 1fr;gap:16px;padding:16px 0;border-bottom:1px solid var(--line)}
+.dpl:last-child{border-bottom:0}
+.dpl-code{font-family:var(--f-mono);font-weight:600;font-size:1.05rem;color:var(--accent)}
+
+/* TP ABCD */
+.tp{font-size:1.08rem;line-height:1.9}
+.tp mark{background:none;color:inherit;border-bottom:3px solid;padding:0 1px;cursor:pointer}
+.tp mark[data-k="condition"]{border-color:var(--blue)}
+.tp mark[data-k="audience"]{border-color:var(--amber)}
+.tp mark[data-k="behavior"]{border-color:var(--accent)}
+.tp mark[data-k="degree"]{border-color:var(--green)}
+.tp.dim mark{opacity:.25}
+.tp.dim mark.on{opacity:1;background:var(--surface-2)}
+.abcd{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.abcd button{border:1px solid var(--line);background:var(--surface);padding:4px 12px;border-radius:4px;font-weight:600;border-left-width:5px}
+.abcd button[data-k="condition"]{border-left-color:var(--blue)}
+.abcd button[data-k="audience"]{border-left-color:var(--amber)}
+.abcd button[data-k="behavior"]{border-left-color:var(--accent)}
+.abcd button[data-k="degree"]{border-left-color:var(--green)}
+.abcd button[aria-pressed="true"]{background:var(--surface-2)}
+.abcd-note{margin-top:10px;color:var(--muted);min-height:1.6em}
+
+/* rows */
+.rows>div{display:grid;grid-template-columns:minmax(120px,200px) 1fr;gap:16px;padding:16px 0;border-bottom:1px solid var(--line)}
+.rows>div:last-child{border-bottom:0}
+@media (max-width:620px){.rows>div{grid-template-columns:1fr;gap:4px}}
+ul.plain{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+
+/* seg */
+.seg{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
+.seg button{border:1px solid var(--line);background:var(--surface);padding:7px 14px;border-radius:4px;font-weight:600}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+
+/* meeting */
+.meet-head{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between;margin-bottom:18px}
+.meet-head h2{max-width:34ch}
+.pbar{display:flex;height:46px;border:1px solid var(--line);margin-bottom:6px}
+.pbar button{border:0;border-right:1px solid var(--surface);min-width:0;padding:0 8px;font-family:var(--f-mono);font-size:.78rem;font-weight:600;color:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;white-space:nowrap}
+.pbar button:last-child{border-right:0}
+.ph-memahami{background:#0a7468}
+.ph-mengaplikasi{background:#9a5b00}
+.ph-merefleksi{background:#1d68a8}
+.pbar button[aria-pressed="true"]{outline:3px solid var(--fg);outline-offset:-3px}
+.pnote{color:var(--muted);font-size:.9rem;margin-bottom:16px}
+.step{display:grid;grid-template-columns:56px 1fr;gap:0 16px;padding:18px 0;border-top:1px solid var(--line)}
+.step-n{font-family:var(--f-display);font-size:2rem;font-weight:700;line-height:1}
+.step.memahami .step-n{color:var(--accent)}
+.step.mengaplikasi .step-n{color:var(--amber)}
+.step.merefleksi .step-n{color:var(--blue)}
+.step-top{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline;margin-bottom:6px}
+.step-top .meta{font-family:var(--f-mono);font-size:.8rem;color:var(--muted)}
+.step p{max-width:78ch}
+.step label{display:inline-flex;align-items:center;gap:8px;margin-top:10px;font-size:.9rem;color:var(--muted);cursor:pointer}
+.step label input{width:18px;height:18px;accent-color:var(--accent)}
+.step.done p,.step.done h4{opacity:.6}
+.prog{height:8px;background:var(--surface-2);border:1px solid var(--line);margin-top:6px}
+.prog>i{display:block;height:100%;background:var(--accent);width:0;transition:width .25s}
+@media (prefers-reduced-motion:reduce){.prog>i{transition:none}}
+@media (max-width:480px){.step{grid-template-columns:36px 1fr;gap:0 10px}.step-n{font-size:1.5rem}}
+
+/* demos */
+.demo{border:1px solid var(--line);background:var(--surface-2);padding:14px;margin-block:14px}
+.demo svg{display:block;width:100%;height:auto;max-width:100%}
+.demo-scroll{overflow-x:auto}
+.sv-box{fill:var(--surface);stroke:var(--fg);stroke-width:1.5}
+.sv-ln{stroke:var(--fg);stroke-width:1.5;fill:none}
+.sv-fill{fill:var(--fg);stroke:var(--fg)}
+.sv-hollow{fill:var(--surface);stroke:var(--fg);stroke-width:1.5}
+.sv-txt{fill:var(--fg);font-family:var(--f-body);font-size:13px}
+.sv-mono{fill:var(--muted);font-family:var(--f-mono);font-size:11px}
+.sv-lane{fill:var(--surface);stroke:var(--line);stroke-width:1.5}
+.sv-head{fill:var(--accent-soft)}
+.sv-hl{stroke:var(--accent);stroke-width:2.5}
+.dim{opacity:.18}
+.cap{margin-top:10px;min-height:3.2em}
+.lg{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:10px}
+.lg button{border:1px solid var(--line);background:var(--surface);padding:8px;text-align:left;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.lg button[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.lg svg{width:70px;height:34px}
+pre.code{background:var(--code-bg);color:var(--code-fg);padding:16px;overflow-x:auto;font-family:var(--f-mono);font-size:.82rem;line-height:1.6;margin:10px 0 0}
+table.vis{border-collapse:collapse;width:100%;font-size:.95rem}
+table.vis th,table.vis td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+table.vis th{font-family:var(--f-mono);font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:10px}
+.flow>div{flex:1 1 180px;padding:12px;border:1px solid var(--line);background:var(--surface-2)}
+.flow>b{align-self:center;font-family:var(--f-mono);color:var(--accent)}
+
+/* lkpd */
+.check{display:grid;grid-template-columns:28px 1fr;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.check:last-child{border-bottom:0}
+.check input{width:20px;height:20px;margin-top:3px;accent-color:var(--accent)}
+.check label{cursor:pointer}
+.check.on label{opacity:.55;text-decoration:line-through}
+.field{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
+.field input[type=text],.field input[type=number]{font:inherit;color:var(--fg);background:var(--surface);border:1px solid var(--fg);padding:8px 10px;min-width:0;flex:1 1 200px}
+.btn{border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);padding:8px 16px;font-weight:700;border-radius:4px}
+.btn.ghost{background:transparent;color:var(--accent)}
+.out{font-family:var(--f-mono);font-size:.9rem;background:var(--code-bg);color:var(--code-fg);padding:10px 12px;overflow-wrap:anywhere;margin-top:10px}
+.brief{border:1px dashed var(--blue);background:var(--blue-soft);padding:16px}
+
+/* rubrik */
+.rub{border-collapse:collapse;min-width:820px;width:100%}
+.rub th,.rub td{border:1px solid var(--line);padding:0;vertical-align:top;text-align:left}
+.rub th{padding:10px;background:var(--surface-2);font-size:.85rem}
+.rub th.asp,.rub td.asp{width:17%;padding:10px;font-weight:700;background:var(--surface-2)}
+.rub td button{display:block;width:100%;height:100%;border:0;background:var(--surface);padding:10px;text-align:left;font-size:.88rem;line-height:1.45}
+.rub td button:hover{background:var(--accent-soft)}
+.rub td button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.score{display:flex;flex-wrap:wrap;gap:16px 32px;align-items:center;margin-top:16px;padding:16px;background:var(--surface-2);border:1px solid var(--line)}
+.score .big{font-family:var(--f-display);font-size:2.2rem;font-weight:700;color:var(--accent);line-height:1}
+.split{display:flex;height:34px;border:1px solid var(--line);margin-top:12px}
+.split>div{display:flex;align-items:center;justify-content:center;font-family:var(--f-mono);font-size:.8rem;font-weight:600;color:#fff;min-width:0;overflow:hidden}
+
+/* hots */
+.q{padding:20px 0;border-top:1px solid var(--line)}
+.q:first-of-type{border-top:0;padding-top:0}
+.q-text{max-width:80ch;margin:8px 0 14px}
+.sel{display:flex;flex-wrap:wrap;gap:10px 20px;align-items:center;margin-bottom:10px}
+.sel label{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:.9rem}
+select{font:inherit;color:var(--fg);background:var(--surface);border:1px solid var(--fg);padding:8px 10px;min-width:210px;max-width:100%}
+.opts{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.opts label{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);background:var(--surface);cursor:pointer}
+.opts input{margin-top:5px;accent-color:var(--accent)}
+.fb{margin-top:12px;padding:12px 14px;border-left:5px solid;max-width:80ch}
+.fb.ok{background:var(--green-soft);border-color:var(--green)}
+.fb.no{background:var(--red-soft);border-color:var(--red)}
+.key{margin-top:10px;padding:14px;background:var(--surface-2);border:1px solid var(--line);max-width:80ch}
+.sum{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px}
+
+/* simulasi */
+.chat{display:flex;flex-direction:column;gap:10px;max-height:340px;overflow-y:auto;padding:12px;background:var(--surface-2);border:1px solid var(--line);min-height:120px;margin-top:10px}
+.bb{max-width:88%;padding:8px 12px;border:1px solid var(--line);overflow-wrap:anywhere}
+.bb.me{align-self:flex-end;background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.bb.cl{align-self:flex-start;background:var(--surface)}
+.bb.tip{align-self:stretch;max-width:100%;background:var(--amber-soft);border-color:transparent;font-size:.92rem}
+.bb .who{display:block;font-family:var(--f-mono);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;opacity:.75;margin-bottom:2px}
+.qlist{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.qlist button{text-align:left;border:1px solid var(--line);background:var(--surface);padding:8px 12px}
+.qlist button:hover:not(:disabled){border-color:var(--accent)}
+.qlist button:disabled{opacity:.45;cursor:default}
+.tag.red{background:var(--red-soft);color:var(--red)}
+.tag.green{background:var(--green-soft);color:var(--green)}
+.us{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px}
+.cgsel{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.cgsel label{display:inline-flex;gap:8px;align-items:center;padding:6px 12px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-family:var(--f-mono);font-size:.85rem}
+.cgsel input{accent-color:var(--accent);width:16px;height:16px}
+footer.sign{border-top:1px solid var(--line);padding-block:28px 40px}
+.sign-in{display:flex;flex-wrap:wrap;gap:24px 80px;justify-content:space-between}
+.sign-in div{min-width:200px}
+.sign-in .sp{height:56px}
+.sign-in b{text-decoration:underline}
+.small{font-size:.88rem;color:var(--muted)}
+</style>
+
+<header class="hero">
+  <div class="wrap hero-in">
+    <div class="hero-txt">
+      <div class="eyebrow">Kurikulum Merdeka &middot; Deep Learning</div>
+      <h1>Rencana Pembelajaran Mendalam</h1>
+      <p class="sub">Rekayasa Perangkat Lunak, Fase F / XI. Dari wawancara klien sampai dokumen SRS dan diagram UML untuk unit usaha sekolah.</p>
+      <div class="chips">
+        <span class="chip">SMK Negeri 3 Palu</span>
+        <span class="chip">2026/2027 &middot; Semester Ganjil</span>
+        <span class="chip mindful">Berkesadaran</span>
+        <span class="chip meaning">Bermakna</span>
+        <span class="chip joyful">Menggembirakan</span>
+      </div>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <svg viewBox="0 0 280 150" width="100%" role="img">
+        <rect class="sv-box" x="10" y="12" width="110" height="56"/><line class="sv-ln" x1="10" y1="32" x2="120" y2="32"/><line class="sv-ln" x1="10" y1="50" x2="120" y2="50"/>
+        <text class="sv-txt" x="65" y="26" text-anchor="middle" font-weight="700">Transaksi</text>
+        <text class="sv-mono" x="16" y="45">- total : int</text>
+        <rect class="sv-box" x="160" y="82" width="110" height="56"/><line class="sv-ln" x1="160" y1="102" x2="270" y2="102"/><line class="sv-ln" x1="160" y1="120" x2="270" y2="120"/>
+        <text class="sv-txt" x="215" y="96" text-anchor="middle" font-weight="700">DetailTransaksi</text>
+        <text class="sv-mono" x="166" y="115">- qty : int</text>
+        <polygon class="sv-fill" points="65,68 73,80 65,92 57,80"/>
+        <polyline class="sv-ln" points="65,92 65,110 160,110"/>
+        <text class="sv-mono" x="72" y="78">1</text><text class="sv-mono" x="128" y="105">1..*</text>
+      </svg>
+    </div>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="Bagian RPP">
+  <div class="wrap tabs-in" id="tabs">
+    <a class="tab" href="#info">Info Umum</a>
+    <a class="tab" href="#desain">Desain</a>
+    <a class="tab" href="#p1">Pertemuan 1</a>
+    <a class="tab" href="#p2">Pertemuan 2</a>
+    <a class="tab" href="#materi">Materi</a>
+    <a class="tab" href="#simulasi">Simulasi</a>
+    <a class="tab" href="#lkpd">LKPD</a>
+    <a class="tab" href="#asesmen">Asesmen</a>
+    <a class="tab" href="#hots">Soal HOTS</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<!-- INFO -->
+<section id="info" hidden>
+  <div class="sec-head"><h2>Informasi Umum</h2><p>Identitas modul, dimensi profil lulusan, dan tujuan pembelajaran.</p></div>
+  <div class="stack">
+    <div class="panel">
+      <dl class="kv">
+        <dt>Nama Sekolah</dt><dd><b>SMK Negeri 3 Palu</b></dd>
+        <dt>Tahun Pelajaran</dt><dd>2026/2027</dd>
+        <dt>Fase / Kelas</dt><dd><span class="tag">Fase F / XI</span></dd>
+        <dt>Mata Pelajaran</dt><dd><b>Rekayasa Perangkat Lunak</b></dd>
+        <dt>Semester</dt><dd><span class="tag blue">Semester Ganjil</span></dd>
+        <dt>Konsentrasi Keahlian</dt><dd>Rekayasa Perangkat Lunak</dd>
+        <dt>Topik / Materi Utama</dt><dd><b>Pemodelan Perangkat Lunak &amp; Pemrograman Terstruktur/OOP Lanjutan</b></dd>
+        <dt>Media &amp; Alat Pembelajaran</dt><dd><span class="tag amber">Google Classroom</span></dd>
+        <dt>Sarana &amp; Prasarana</dt><dd>Proyektor, Internet 50 Mbps, Lab Komputer, AI, Quizizz</dd>
+        <dt>Kesiapan &amp; Karakteristik Murid</dt><dd>Sebagian besar gaya belajar visual, menyukai studi kasus dunia nyata</dd>
+        <dt>Alokasi Waktu</dt><dd><span class="tag amber">2 Pertemuan (18 x 45 menit per pertemuan)</span></dd>
+      </dl>
+    </div>
+
+    <div class="panel">
+      <h3>B. Dimensi Profil Lulusan (DPL)</h3>
+      <div>
+        <div class="dpl"><div class="dpl-code">DPL1</div><div><h4>Penalaran Kritis</h4><p>Menganalisis kebutuhan fungsional dan non-fungsional sistem dari klien nyata serta memetakan alur logika bisnis ke dalam diagram visual terstruktur.</p></div></div>
+        <div class="dpl"><div class="dpl-code">DPL2</div><div><h4>Kolaborasi dan Komunikasi</h4><p>Bekerja sama dalam tim pengembang perangkat lunak, membagi peran analis sistem, dan mempresentasikan spesifikasi teknis kepada pemangku kepentingan.</p></div></div>
+        <div class="dpl"><div class="dpl-code">DPL3</div><div><h4>Kemandirian dan Kreativitas</h4><p>Merancang solusi arsitektur berorientasi objek yang inovatif dan terukur dengan memanfaatkan asistensi teknologi kecerdasan buatan (AI) secara etis.</p></div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Tujuan Pembelajaran</h3>
+      <p class="small" style="margin:4px 0 14px">Pilih unsur ABCD untuk melihat bagian kalimat yang dimaksud.</p>
+      <p class="tp" id="tp">Melalui model <mark data-k="condition">Problem Based Learning terintegrasi Teaching Factory</mark>, <mark data-k="audience">peserta didik kelas XI Konsentrasi Keahlian Rekayasa Perangkat Lunak</mark> mampu <mark data-k="behavior">menganalisis kebutuhan klien serta merancang dokumen Software Requirements Specification (SRS) dan diagram pemodelan berorientasi objek (Use Case, Activity, dan Class Diagram)</mark> <mark data-k="degree">secara komprehensif, logis, dan tepat sesuai standar industri rekayasa perangkat lunak</mark>.</p>
+      <div class="abcd" id="abcd">
+        <button data-k="condition" aria-pressed="false">Condition</button>
+        <button data-k="audience" aria-pressed="false">Audience</button>
+        <button data-k="behavior" aria-pressed="false">Behavior</button>
+        <button data-k="degree" aria-pressed="false">Degree</button>
+      </div>
+      <p class="abcd-note" id="abcdNote"></p>
+    </div>
+  </div>
+</section>
+
+<!-- DESAIN -->
+<section id="desain" hidden>
+  <div class="sec-head"><h2>Desain Pembelajaran</h2><p>Praktik pedagogis, lingkungan, kemitraan, dan pemanfaatan digital.</p></div>
+  <div class="panel rows">
+    <div><h3>Praktik Pedagogis</h3><p>Model Problem Based Learning (PBL) berorientasi Teaching Factory (TeFa), dengan murid berperan sebagai profesional <b>Junior System Analyst</b>. Pembelajaran menerapkan deep learning (Mindful, Meaningful, Joyful Learning) dengan mengombinasikan visual scaffolding, simulasi wawancara klien, perancangan diagram interaktif, dan validasi sejawat.</p></div>
+    <div><h3>Lingkungan Pembelajaran</h3><p>Laboratorium Komputer SMKN 3 Palu disimulasikan sebagai Software House / Studio Digital Agency. Meja ditata berbentuk klaster tim kerja (scrum teams) dengan akses internet stabil 50 Mbps untuk eksplorasi referensi, repository Google Classroom, dan peranti pemodelan digital.</p></div>
+    <div><h3>Kemitraan Pembelajaran</h3><p>Kolaborasi dengan Unit Produksi / Teaching Factory SMKN 3 Palu (misalnya Unit Jasa Percetakan atau Kantin Digital) dan UMKM mitra lokal di Kota Palu sebagai penyedia studi kasus nyata (klien autentik) yang membutuhkan sistem informasi berbasis web/mobile.</p></div>
+    <div><h3>Pemanfaatan Digital</h3>
+      <ul class="plain">
+        <li><b>Google Classroom</b> untuk tugas, lembar kerja, dan materi.</li>
+        <li><b>Quizizz</b> untuk asesmen formatif interaktif visual.</li>
+        <li><b>Generative AI</b> (ChatGPT/Claude/Gemini) sebagai mitra brainstorming skenario use case.</li>
+        <li><b>Aplikasi diagramming</b>: PlantUML, Draw.io, atau StarUML.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- P1 -->
+<section id="p1" hidden>
+  <div class="meet-head">
+    <div><div class="eyebrow">Pertemuan 1 &middot; 18 x 45 menit</div><h2>Elisitasi Kebutuhan Klien, SRS, dan Pemodelan Alur Sistem (Use Case &amp; Activity Diagram)</h2></div>
+    <div style="min-width:200px"><div class="small" id="pg-p1">0 dari 7 langkah ditandai</div><div class="prog"><i id="pb-p1"></i></div></div>
+  </div>
+  <div class="pbar" id="bar-p1"></div>
+  <p class="pnote">Lebar blok sama dengan durasi tiap fase. Klik blok untuk menyaring langkah.</p>
+  <div id="steps-p1"></div>
+</section>
+
+<!-- P2 -->
+<section id="p2" hidden>
+  <div class="meet-head">
+    <div><div class="eyebrow">Pertemuan 2 &middot; 18 x 45 menit</div><h2>Pemodelan Struktur Berorientasi Objek Lanjutan (Class Diagram, Atribut, Relasi) &amp; Finalisasi Dokumen SRS Layanan TeFa</h2></div>
+    <div style="min-width:200px"><div class="small" id="pg-p2">0 dari 7 langkah ditandai</div><div class="prog"><i id="pb-p2"></i></div></div>
+  </div>
+  <div class="pbar" id="bar-p2"></div>
+  <p class="pnote">Lebar blok sama dengan durasi tiap fase. Klik blok untuk menyaring langkah.</p>
+  <div id="steps-p2"></div>
+</section>
+
+<!-- MATERI -->
+<section id="materi" hidden>
+  <div class="sec-head"><h2>Uraian Materi</h2><p>Pemodelan perangkat lunak berorientasi objek (UML) dalam Teaching Factory.</p></div>
+  <div class="seg" id="seg-materi">
+    <button data-t="m-peran" aria-pressed="true">Peran Analyst</button>
+    <button data-t="m-uc" aria-pressed="false">Use Case</button>
+    <button data-t="m-act" aria-pressed="false">Activity</button>
+    <button data-t="m-cls" aria-pressed="false">Class Diagram</button>
+  </div>
+
+  <div class="panel" id="m-peran">
+    <h3>Peran Junior System Analyst dalam Rekayasa Perangkat Lunak</h3>
+    <p style="margin:8px 0 14px;max-width:75ch">System Analyst menjadi jembatan antara kebutuhan bisnis klien (problem domain) dan solusi teknologi yang dibangun programmer (solution domain).</p>
+    <div class="flow">
+      <div><div class="label">Problem domain</div><b>Kebutuhan bisnis klien</b></div><b>&rarr;</b>
+      <div style="background:var(--accent-soft)"><div class="label">Jembatan</div><b>System Analyst</b></div><b>&rarr;</b>
+      <div><div class="label">Solution domain</div><b>Solusi oleh programmer</b></div>
+    </div>
+    <h4 style="margin-top:20px">Tugas utama</h4>
+    <ul class="plain" style="margin-top:8px">
+      <li>Elisitasi kebutuhan (fact-finding).</li>
+      <li>Menganalisis kelayakan.</li>
+      <li>Menuangkan hasilnya ke dalam Software Requirements Specification (SRS).</li>
+    </ul>
+  </div>
+
+  <div class="panel" id="m-uc" hidden>
+    <h3>Pemodelan Kebutuhan Fungsional dengan Use Case Diagram</h3>
+    <p style="margin:8px 0;max-width:75ch">Use Case Diagram memodelkan interaksi antara aktor eksternal (pengguna atau sistem lain) dengan fungsionalitas sistem.</p>
+    <div class="demo">
+      <div class="seg" id="seg-uc" style="margin-bottom:10px">
+        <button data-v="all" aria-pressed="true">Semua</button>
+        <button data-v="include" aria-pressed="false">&laquo;include&raquo;</button>
+        <button data-v="extend" aria-pressed="false">&laquo;extend&raquo;</button>
+      </div>
+      <svg viewBox="0 0 540 250" role="img" aria-label="Contoh use case diagram dengan relasi include dan extend">
+        <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M1 1 L9 5 L1 9" fill="none" stroke="var(--fg)" stroke-width="1.5"/></marker></defs>
+        <rect class="sv-lane" x="110" y="8" width="420" height="234"/>
+        <text class="sv-mono" x="120" y="26">Sistem Kasir TeFa (system boundary)</text>
+        <g><circle cx="44" cy="108" r="12" class="sv-hollow"/><path class="sv-ln" d="M44 120V160M20 134H68M44 160L26 190M44 160L62 190"/><text class="sv-txt" x="44" y="212" text-anchor="middle">Kasir</text></g>
+        <line class="sv-ln" x1="64" y1="124" x2="150" y2="84"/><line class="sv-ln" x1="64" y1="140" x2="150" y2="186"/>
+        <g id="uc-base">
+          <ellipse class="sv-box" cx="210" cy="70" rx="62" ry="28"/><text class="sv-txt" x="210" y="75" text-anchor="middle">Checkout</text>
+          <ellipse class="sv-box" cx="210" cy="190" rx="70" ry="28"/><text class="sv-txt" x="210" y="195" text-anchor="middle">Transaksi Berhasil</text>
+        </g>
+        <g id="uc-inc">
+          <ellipse class="sv-box" cx="440" cy="60" rx="76" ry="28"/><text class="sv-txt" x="440" y="65" text-anchor="middle">Validasi Pembayaran</text>
+          <line class="sv-ln" x1="272" y1="66" x2="364" y2="62" stroke-dasharray="6 4" marker-end="url(#ah)"/>
+          <text class="sv-mono" x="318" y="52" text-anchor="middle">&laquo;include&raquo;</text>
+        </g>
+        <g id="uc-ext">
+          <ellipse class="sv-box" cx="440" cy="190" rx="76" ry="28"/><text class="sv-txt" x="440" y="195" text-anchor="middle">Cetak Invoice Fisik</text>
+          <line class="sv-ln" x1="364" y1="190" x2="280" y2="190" stroke-dasharray="6 4" marker-end="url(#ah)"/>
+          <text class="sv-mono" x="322" y="180" text-anchor="middle">&laquo;extend&raquo;</text>
+        </g>
+      </svg>
+      <p class="cap" id="ucCap">Pilih jenis relasi untuk menyorot bagian diagram.</p>
+    </div>
+    <table class="vis"><tbody>
+      <tr><th>Aktor</th><td>Entitas luar yang berinteraksi dengan sistem (Kasir, Pelanggan, Manajer Gudang).</td></tr>
+      <tr><th>Use Case</th><td>Fungsionalitas tingkat tinggi sistem (&lsquo;Mengelola Data Barang&rsquo;, &lsquo;Melakukan Transaksi Penjualan&rsquo;).</td></tr>
+      <tr><th>&laquo;include&raquo;</th><td>Use case wajib memanggil use case lain untuk menyelesaikan prosesnya. Contoh: &lsquo;Checkout&rsquo; include &lsquo;Validasi Pembayaran&rsquo;.</td></tr>
+      <tr><th>&laquo;extend&raquo;</th><td>Perilaku opsional atau kondisional. Contoh: &lsquo;Cetak Invoice Fisik&rsquo; extend &lsquo;Transaksi Berhasil&rsquo; jika pelanggan meminta struk.</td></tr>
+    </tbody></table>
+  </div>
+
+  <div class="panel" id="m-act" hidden>
+    <h3>Pemodelan Alur Logika Bisnis dengan Activity Diagram</h3>
+    <p style="margin:8px 0;max-width:75ch">Activity diagram memodelkan alur kerja (workflow) langkah demi langkah dari suatu proses bisnis. Contoh di bawah adalah alur transaksi kasir yang dipisah per penanggung jawab.</p>
+    <div class="demo demo-scroll">
+      <svg viewBox="0 0 540 360" style="min-width:480px" role="img" aria-label="Contoh activity diagram swimlane transaksi kasir">
+        <defs><marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="var(--fg)" stroke-width="1.5"/></marker></defs>
+        <rect class="sv-lane" x="8" y="8" width="262" height="344"/><rect class="sv-lane" x="270" y="8" width="262" height="344"/>
+        <rect class="sv-head" x="8" y="8" width="262" height="28"/><rect class="sv-head" x="270" y="8" width="262" height="28"/>
+        <text class="sv-txt" x="139" y="27" text-anchor="middle" font-weight="700">Kasir</text><text class="sv-txt" x="401" y="27" text-anchor="middle" font-weight="700">Sistem</text>
+        <circle class="sv-fill" cx="139" cy="58" r="8"/>
+        <line class="sv-ln" x1="139" y1="66" x2="139" y2="84" marker-end="url(#ah2)"/>
+        <rect class="sv-box" x="79" y="86" width="120" height="36" rx="14"/><text class="sv-txt" x="139" y="109" text-anchor="middle">Input barang</text>
+        <line class="sv-ln" x1="199" y1="104" x2="340" y2="104" marker-end="url(#ah2)"/>
+        <rect class="sv-box" x="341" y="86" width="120" height="36" rx="14"/><text class="sv-txt" x="401" y="109" text-anchor="middle">Validasi stok</text>
+        <line class="sv-ln" x1="401" y1="122" x2="401" y2="146" marker-end="url(#ah2)"/>
+        <polygon class="sv-box" points="401,148 441,174 401,200 361,174"/><text class="sv-mono" x="401" y="178" text-anchor="middle">stok?</text>
+        <polyline class="sv-ln" points="361,174 139,174 139,126" marker-end="url(#ah2)"/><text class="sv-mono" x="250" y="168" text-anchor="middle">tidak cukup</text>
+        <line class="sv-ln" x1="401" y1="200" x2="401" y2="224" marker-end="url(#ah2)"/><text class="sv-mono" x="410" y="216">cukup</text>
+        <rect class="sv-box" x="341" y="226" width="120" height="36" rx="14"/><text class="sv-txt" x="401" y="249" text-anchor="middle">Hitung total</text>
+        <polyline class="sv-ln" points="341,244 139,244 139,268" marker-end="url(#ah2)"/>
+        <rect class="sv-box" x="69" y="270" width="140" height="36" rx="14"/><text class="sv-txt" x="139" y="293" text-anchor="middle">Terima pembayaran</text>
+        <polyline class="sv-ln" points="209,288 401,288 401,306" marker-end="url(#ah2)"/>
+        <rect class="sv-box" x="341" y="308" width="120" height="30" rx="14"/><text class="sv-txt" x="401" y="328" text-anchor="middle">Cetak struk</text>
+        <circle class="sv-hollow" cx="500" cy="323" r="9"/><circle class="sv-fill" cx="500" cy="323" r="5"/>
+        <line class="sv-ln" x1="461" y1="323" x2="489" y2="323" marker-end="url(#ah2)"/>
+      </svg>
+    </div>
+    <h4 style="margin-top:18px">Fitur kunci</h4>
+    <div class="lg" id="actLg"></div>
+    <p class="cap" id="actCap"></p>
+  </div>
+
+  <div class="panel" id="m-cls" hidden>
+    <h3>Pemodelan Struktur Sistem Menggunakan Class Diagram</h3>
+    <p style="margin:8px 0;max-width:75ch">Class Diagram adalah diagram struktural inti dalam OOP yang menggambarkan struktur statis sistem. Setiap kelas memuat nama kelas, atribut, dan method/operasi.</p>
+    <table class="vis" style="margin-bottom:6px"><tbody>
+      <tr><th>+</th><td>public</td><th>-</th><td>private</td><th>#</th><td>protected</td></tr>
+    </tbody></table>
+    <h4 style="margin-top:18px">Relasi antarkelas</h4>
+    <div class="demo">
+      <div class="seg" id="seg-rel" style="margin-bottom:10px"></div>
+      <div id="relSvg"></div>
+      <p class="cap" id="relCap"></p>
+    </div>
+    <h4 style="margin-top:18px">Dari diagram ke kerangka kode</h4>
+    <p class="small" style="margin-top:4px">Contoh kerangka kelas TypeScript dari class diagram sistem kasir TeFa (ilustrasi).</p>
+    <pre class="code"><code>class User {
+  protected nama: string;
+  private kataSandi: string;
+  masuk(): boolean { /* ... */ }
+}
+
+class Kasir extends User {            // Generalization
+  inputTransaksi(): Transaksi { /* ... */ }
+}
+
+class Transaksi {
+  private total: number;
+  private items: DetailTransaksi[];   // Composition 1..*
+  hitungTotal(): number { /* ... */ }
+}
+
+class DetailTransaksi {
+  private jumlah: number;
+}</code></pre>
+  </div>
+</section>
+
+<!-- SIMULASI -->
+<section id="simulasi" hidden>
+  <div class="sec-head"><h2>Simulasi</h2><p>Latihan langsung untuk dua kegiatan inti: wawancara klien pada Pertemuan 1 dan uji coba mini code generator pada Pertemuan 2.</p></div>
+  <div class="seg" id="seg-sim">
+    <button data-t="s-iv" aria-pressed="true">Wawancara Klien</button>
+    <button data-t="s-cg" aria-pressed="false">Mini Code Generator</button>
+  </div>
+
+  <div id="s-iv" class="stack">
+    <div class="brief">
+      <div class="label">Skenario</div>
+      <p style="margin-top:6px;max-width:80ch">Anda Lead Analyst sebuah tim Software House. Klien Anda adalah Manajer Unit TeFa Mart SMKN 3 Palu, yang masih memakai pencatatan kasir dan inventaris manual. Pilih pertanyaan satu per satu untuk menggali kebutuhan. Tidak semua pertanyaan efektif, jadi perhatikan jawaban dan catatan yang muncul.</p>
+      <p class="small" style="margin-top:6px">Jawaban klien adalah skenario contoh untuk latihan, bukan data unit usaha yang sebenarnya.</p>
+    </div>
+    <div class="cols">
+      <div class="panel">
+        <h3>Percakapan</h3>
+        <div class="chat" id="ivChat" aria-live="polite"></div>
+        <div class="label" style="margin-top:14px">Pilih pertanyaan</div>
+        <div class="qlist" id="ivQ"></div>
+      </div>
+      <div class="panel">
+        <h3>Template elisitasi</h3>
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:baseline;margin-top:6px"><span class="small" id="ivCov">Cakupan topik: 0 dari 7</span><span class="small" id="ivCnt">0 pertanyaan</span></div>
+        <div class="prog"><i id="ivBar"></i></div>
+        <div id="ivFind" style="margin-top:12px"></div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px"><button class="btn" id="ivUs">Susun user stories</button><button class="btn ghost" id="ivReset">Ulangi simulasi</button></div>
+        <div id="ivStories" style="margin-top:14px"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="s-cg" hidden class="stack">
+    <div class="brief">
+      <div class="label">Skenario</div>
+      <p style="margin-top:6px;max-width:80ch">Buktikan bahwa desain class diagram siap diimplementasikan. Pilih kelas yang ada di diagram tim Anda dan bahasa pemrogramannya, lalu lihat kerangka kode yang dihasilkan. Relasi hanya muncul bila kedua kelasnya ikut dipilih.</p>
+    </div>
+    <div class="panel">
+      <div class="label">Kelas</div>
+      <div class="cgsel" id="cgSel"></div>
+      <div class="label" style="margin-top:14px">Bahasa</div>
+      <div class="seg" id="seg-lang" style="margin:6px 0 0">
+        <button data-l="ts" aria-pressed="true">TypeScript</button>
+        <button data-l="java" aria-pressed="false">Java</button>
+        <button data-l="php" aria-pressed="false">PHP</button>
+      </div>
+      <div class="cap small" id="cgHint" style="min-height:1.6em;margin-top:10px"></div>
+      <pre class="code" id="cgOut" style="max-height:440px"></pre>
+      <div class="field"><button class="btn" id="cgCopy">Salin kode</button><span class="small" id="cgMsg" role="status"></span></div>
+      <table class="vis" style="margin-top:16px"><tbody>
+        <tr><th>Simbol</th><th>+</th><th>-</th><th>#</th></tr>
+        <tr><th>Kata kunci</th><td>public</td><td>private</td><td>protected</td></tr>
+      </tbody></table>
+      <p class="small" style="margin-top:8px">Kode ini kerangka ilustrasi: isi method belum ada dan menandai TODO untuk tim programmer.</p>
+    </div>
+  </div>
+</section>
+
+<!-- LKPD -->
+<section id="lkpd" hidden>
+  <div class="sec-head"><h2>LKPD Teaching Factory</h2><p>Dokumen Spesifikasi Kebutuhan Perangkat Lunak (SRS) dan Pemodelan UML Sistem Layanan Usaha Sekolah.</p></div>
+  <div class="stack">
+    <div class="brief">
+      <div class="label">Tugas &amp; instruksi utama</div>
+      <p style="margin-top:6px;max-width:80ch">Bertindaklah sebagai Junior System Analyst. Susun dokumen SRS standar industri untuk <b>Sistem Informasi Transaksi Kasir dan Manajemen Stok Unit TeFa SMKN 3 Palu</b> yang memuat:</p>
+      <ol class="plain" style="margin-top:8px">
+        <li>Ruang lingkup sistem &amp; user stories.</li>
+        <li>Use Case Diagram beserta Use Case Narrative.</li>
+        <li>Activity Diagram transaksi penjualan lengkap dengan swimlane.</li>
+        <li>Class Diagram terstruktur dengan relasi asosiasi, komposisi, serta generalisasi.</li>
+      </ol>
+    </div>
+    <div class="panel">
+      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;align-items:baseline">
+        <h3>Langkah kerja peserta didik</h3>
+        <span class="small" id="lk-pg">0 dari 10 selesai</span>
+      </div>
+      <div class="prog" style="margin-bottom:8px"><i id="lk-bar"></i></div>
+      <div id="lkList"></div>
+      <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" id="lkReset">Atur ulang centang</button></div>
+    </div>
+    <div class="cols">
+      <div class="panel">
+        <h3>Syarat minimal diagram</h3>
+        <ul class="plain" style="margin-top:10px">
+          <li>Use Case: minimal 2 aktor, relasi &laquo;include&raquo; dan &laquo;extend&raquo;.</li>
+          <li>Activity: format swimlane (alur aksi pengguna dan sistem) untuk transaksi utama.</li>
+          <li>Class: minimal 4 kelas entitas bisnis, tipe data atribut, visibilitas (+/-/#), method, kardinalitas, relasi composition/inheritance.</li>
+          <li>Ekspor diagram sebagai PNG/SVG beresolusi tinggi.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>Penamaan file akhir</h3>
+        <p class="small" style="margin-top:4px">Simpan dalam PDF dan serahkan lewat Google Classroom.</p>
+        <div class="field"><label for="kel" class="sr" style="font-weight:600">Nama kelompok</label><input type="text" id="kel" placeholder="Contoh: Kelompok1" autocomplete="off"></div>
+        <div class="out" id="fname">SRS_TeFa_NamaKelompok_FaseF.pdf</div>
+        <div class="field"><button class="btn" id="copyName">Salin nama file</button><span class="small" id="copyMsg" role="status"></span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ASESMEN -->
+<section id="asesmen" hidden>
+  <div class="sec-head"><h2>Asesmen &amp; Rubrik Penilaian</h2><p>Diagnostik, formatif, dan sumatif.</p></div>
+  <div class="seg" id="seg-as">
+    <button data-t="a-diag" aria-pressed="true">Awal (Diagnostik)</button>
+    <button data-t="a-form" aria-pressed="false">Proses (Formatif)</button>
+    <button data-t="a-sum" aria-pressed="false">Akhir (Sumatif)</button>
+  </div>
+
+  <div class="panel" id="a-diag">
+    <h3>Asesmen Awal (Diagnostik)</h3>
+    <p style="margin:8px 0 12px;max-width:80ch">Dilaksanakan pada 30 menit pertama Pertemuan 1, mencakup aspek kognitif dan non-kognitif.</p>
+    <div class="cols">
+      <div><span class="tag">Kognitif</span><p style="margin-top:8px">Kuis visual interaktif di Quizizz: 10 soal pilihan ganda berbasis gambar diagram alur logika, pengenalan simbol dasar flowchart/UML, dan konsep dasar OOP.</p></div>
+      <div><span class="tag amber">Non-kognitif</span><p style="margin-top:8px">Kuesioner singkat via Google Form tentang pengalaman memakai aplikasi kasir/e-commerce dan preferensi peran dalam tim (Analyst, Designer, Programmer).</p></div>
+    </div>
+  </div>
+
+  <div class="panel" id="a-form" hidden>
+    <h3>Asesmen Proses (Formatif)</h3>
+    <p style="margin:8px 0 14px;max-width:80ch">Berlangsung sepanjang pembelajaran: observasi kinerja tim, keaktifan simulasi wawancara klien, penggunaan media digital, serta kemajuan artefak SRS dan diagram di Google Classroom (Milestone 1 pada Pertemuan 1, Milestone 2 pada Pertemuan 2).</p>
+    <h4>Rubrik penilaian formatif</h4>
+    <p class="small" style="margin:4px 0 10px">Klik sel pada tiap baris untuk mencoba menilai satu tim.</p>
+    <div class="demo-scroll"><table class="rub" id="rub"></table></div>
+    <div class="score" aria-live="polite">
+      <div><div class="label">Total skor</div><div class="big" id="rTot">0 / 16</div></div>
+      <div><div class="label">Rata-rata</div><div class="big" id="rAvg">0</div></div>
+      <div><div class="label">Level terdekat</div><div class="big" id="rLvl" style="font-size:1.5rem">Belum dinilai</div></div>
+    </div>
+    <p class="small" style="margin-top:8px">Rata-rata dan level terdekat adalah alat bantu hitung di halaman ini, bukan bagian dari rubrik asli.</p>
+  </div>
+
+  <div class="panel" id="a-sum" hidden>
+    <h3>Asesmen Akhir (Sumatif)</h3>
+    <div class="cols" style="margin-top:12px">
+      <div><span class="tag">Bobot 70%</span><h4 style="margin-top:8px">Asesmen Produk Proyek TeFa</h4><p style="margin-top:4px">Kelayakan dan kelengkapan dokumen SRS final yang memuat Use Case, Activity, dan Class Diagram terintegrasi, berdasarkan studi kasus nyata unit usaha sekolah atau UMKM mitra.</p></div>
+      <div><span class="tag amber">Bobot 30%</span><h4 style="margin-top:8px">Asesmen Kognitif Mandiri HOTS</h4><p style="margin-top:4px">Tes objektif analitis di Quizizz pada akhir Pertemuan 2: 20 butir soal studi kasus evaluasi diagram sistem perangkat lunak.</p></div>
+    </div>
+    <h4 style="margin-top:22px">Hitung nilai akhir</h4>
+    <p class="small" style="margin:4px 0">Angka awal hanya contoh.</p>
+    <div class="field">
+      <label for="nProduk" style="display:flex;flex-direction:column;font-weight:600;font-size:.9rem;gap:4px;flex:1 1 180px">Nilai produk SRS (0-100)<input type="number" id="nProduk" min="0" max="100" value="85"></label>
+      <label for="nKuis" style="display:flex;flex-direction:column;font-weight:600;font-size:.9rem;gap:4px;flex:1 1 180px">Nilai kuis HOTS (0-100)<input type="number" id="nKuis" min="0" max="100" value="80"></label>
+    </div>
+    <div class="score" aria-live="polite"><div><div class="label">Nilai akhir</div><div class="big" id="nAkhir">0</div></div><div class="small" id="nRumus"></div></div>
+    <div class="split" id="nSplit"></div>
+  </div>
+</section>
+
+<!-- HOTS -->
+<section id="hots" hidden>
+  <div class="sec-head"><h2>Soal Berbasis HOTS</h2><p>Jawab dulu, lalu lihat umpan balik dan kunci jawaban beserta pedoman rubrik.</p></div>
+  <div class="panel">
+    <div class="sum"><h3>Skor percobaan</h3><span class="big mono" id="hSum" style="color:var(--accent);font-weight:600">0 / 3 benar</span></div>
+    <div id="hotsList"></div>
+  </div>
+</section>
+
+</main>
+
+<footer class="sign"><div class="wrap sign-in">
+  <div><div>Mengetahui,</div><div>Kepala SMK Negeri 3 Palu</div><div class="sp"></div><b>H. Hamka, S.Pd.</b><div class="small">NIP. 196906241991031007</div></div>
+  <div><div>&nbsp;</div><div>Guru Mata Pelajaran,</div><div class="sp"></div><b>Fajar Tri Satria, S.Kom.</b><div class="small">NIP. 199302182022211002</div></div>
+</div></footer>
+
+<script>
+(function(){
+var $=function(s,r){return (r||document).querySelector(s)};
+var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
+var mem={};
+function sGet(k,d){try{var v=localStorage.getItem('rpm-rpl-'+k);if(v!==null)return JSON.parse(v)}catch(e){} return k in mem?mem[k]:d}
+function sSet(k,v){mem[k]=v;try{localStorage.setItem('rpm-rpl-'+k,JSON.stringify(v))}catch(e){}}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+
+/* router */
+var IDS=['info','desain','p1','p2','materi','simulasi','lkpd','asesmen','hots'];
+function route(){
+  var h=(location.hash||'').replace('#','');
+  if(IDS.indexOf(h)<0)h='info';
+  IDS.forEach(function(id){$('#'+id).hidden=(id!==h)});
+  $$('#tabs .tab').forEach(function(a){if(a.getAttribute('href')==='#'+h)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
+  var t=$('#tabs .tab[aria-current]');if(t&&t.scrollIntoView)try{t.scrollIntoView({block:'nearest',inline:'center'})}catch(e){}
+  window.scrollTo(0,0);
+}
+window.addEventListener('hashchange',route);
+
+/* seg helper */
+function seg(id,onPick){
+  var box=$('#'+id);
+  box.addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;
+    $$('button',box).forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false')});
+    onPick(b);
+  });
+}
+function panels(id){
+  seg(id,function(b){
+    $$('#'+id+' button').forEach(function(x){var p=$('#'+x.dataset.t);if(p)p.hidden=(x!==b)});
+  });
+}
+panels('seg-materi');panels('seg-as');
+
+/* TP ABCD */
+var ABCD={condition:'Condition: kondisi atau model yang dipakai, yaitu PBL terintegrasi Teaching Factory.',audience:'Audience: peserta didik kelas XI Konsentrasi Keahlian RPL.',behavior:'Behavior: perilaku yang diharapkan, yaitu menganalisis kebutuhan dan merancang SRS serta diagram UML.',degree:'Degree: tingkat ketercapaian, yaitu komprehensif, logis, dan sesuai standar industri.'};
+$('#abcd').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  var on=b.getAttribute('aria-pressed')==='true';
+  $$('#abcd button').forEach(function(x){x.setAttribute('aria-pressed','false')});
+  $$('#tp mark').forEach(function(m){m.classList.remove('on')});
+  var tp=$('#tp');
+  if(on){tp.classList.remove('dim');$('#abcdNote').textContent='';return}
+  b.setAttribute('aria-pressed','true');tp.classList.add('dim');
+  $$('#tp mark[data-k="'+b.dataset.k+'"]').forEach(function(m){m.classList.add('on')});
+  $('#abcdNote').textContent=ABCD[b.dataset.k];
+});
+
+/* steps */
+var PH={memahami:{l:'Memahami',s:'Pendahuluan & Pemahaman Awal'},mengaplikasi:{l:'Mengaplikasi',s:'Kegiatan Inti, Diskusi & Praktik'},merefleksi:{l:'Merefleksi',s:'Penutup & Refleksi Berkesadaran'}};
+var STEPS={
+p1:[
+{n:1,p:'memahami',t:'Pembukaan & Pengkondisian',m:45,x:'Guru membuka kelas di Lab Komputer, berdoa, dan memeriksa kehadiran. Murid mengonfirmasi akses Google Classroom yang memuat silabus dan modul ajar digital. Guru memberi pertanyaan pemantik lewat proyektor: "Mengapa 60% proyek perangkat lunak gagal bukan karena bug koding, melainkan salah menangkap kebutuhan klien? Apa beda fitur yang diinginkan pengguna dengan yang dibutuhkan sistem?"'},
+{n:2,p:'memahami',t:'Apersepsi & Asesmen Awal',m:90,x:'Murid mengerjakan pre-test diagnostik visual 15 menit lewat tautan Quizizz di Google Classroom untuk mengukur pemahaman dasar OOP dan diagram alur. Guru menayangkan video profil unit usaha sekolah (TeFa Mart SMKN 3 Palu) yang masih memakai pencatatan kasir dan inventaris manual.'},
+{n:3,p:'memahami',t:'Konsep Esensial',m:135,x:'Guru menyajikan slide tentang teknik elisitasi kebutuhan, penyusunan User Stories, pemilahan functional/non-functional requirements, dan notasi standar UML (Use Case Diagram & Activity Diagram). Murid menyimak studi kasus "Sistem Point of Sales & Inventory TeFa" dan mendiskusikan batasan sistem (system boundary).'},
+{n:4,p:'mengaplikasi',t:'Orientasi Masalah & Pembagian Peran TeFa',m:90,x:'Guru mengumumkan proyek TeFa "Layanan Analisis Kebutuhan Klien". Murid dibagi menjadi tim Software House (4-5 murid per tim). Tiap tim menerima surat order (project brief) dari manajer unit usaha sekolah di Google Classroom, lalu membagi peran: Lead Analyst, Requirement Engineer, dan UML Modeler.'},
+{n:5,p:'mengaplikasi',t:'Simulasi Wawancara Klien & Elisitasi',m:135,x:'Perwakilan unit usaha sekolah (atau guru yang berperan sebagai klien UMKM) hadir di lab. Tiap kelompok melakukan wawancara terstruktur (fact-finding interview) untuk menggali alur operasional bisnis, hak akses pengguna, dan keluhan operasional. Temuan dicatat dan diklarifikasi memakai elicitation template.'},
+{n:6,p:'mengaplikasi',t:'Brainstorming Berbantuan AI & Perancangan Diagram',m:180,x:'Murid memakai internet 50 Mbps untuk mengeksplorasi AI, misalnya menyusun draft skenario use case naratif dengan prompt terarah. Dari hasil wawancara, murid menyusun Use Case Diagram dengan relasi <<include>> dan <<extend>> di Draw.io, lalu Activity Diagram untuk alur transaksi utama (kasir input barang, validasi stok, cetak struk). Guru berkeliling memberi scaffolding teknis dan memastikan swimlane, fork, join, dan decision node tergambar tepat.'},
+{n:7,p:'merefleksi',t:'Reviu Sejawat, Pengunggahan Progres, & Penutup',m:135,x:'Tiap tim menayangkan diagram Use Case dan Activity di proyektor untuk peer-review tim lain selama 60 menit, lalu merevisi diagram. Lead Analyst mengunggah draft Bab 1 dan Bab 2 SRS beserta file ekspor diagram ke assignment "TeFa Milestone 1". Refleksi akhir: murid menulis satu hal paling menantang saat menyelaraskan bahasa klien awam ke bahasa sistem teknis. Kelas ditutup dengan apresiasi dan doa bersama.'}
+],
+p2:[
+{n:1,p:'memahami',t:'Pembukaan & Refleksi Awal',m:45,x:'Guru membuka dengan salam, presensi, dan meninjau umpan balik formatif Milestone 1 di Google Classroom. Murid membaca catatan revisi diagram use case dan activity tim masing-masing.'},
+{n:2,p:'memahami',t:'Apersepsi Visual & Analisis Gap',m:90,x:'Guru menayangkan studi kasus perbandingan activity diagram proses kasir dengan arsitektur basis data relasional, lalu memantik diskusi: "Bagaimana sebuah aktivitas sistem diubah menjadi entitas kode program nyata? Apa hubungan antara kata benda pada skenario bisnis dengan Class, Atribut, dan Method?"'},
+{n:3,p:'memahami',t:'Pendalaman Konsep Class Diagram & OOP Lanjutan',m:135,x:'Guru menjelaskan struktur Class Diagram (visibilitas private "-", public "+", protected "#"), relasi antarkelas (Association, Aggregation, Composition, Generalization/Inheritance, Dependency), serta enkapsulasi dan polimorfisme. Murid mengamati demonstrasi konversi class diagram ke kerangka kode kelas (class skeleton) di Lab Komputer.'},
+{n:4,p:'mengaplikasi',t:'Penyelidikan Mandiri & Ekstraksi Entitas Sistem',m:135,x:'Berdasarkan dokumen SRS Milestone 1, tiap tim mengidentifikasi entitas fisik dan konseptual (User, Barang, Transaksi, DetailTransaksi, Laporan). Murid dapat memvalidasi kardinalitas (multiplicity) dengan prompt generative AI, misalnya relasi composition antara Transaksi dan DetailTransaksi.'},
+{n:5,p:'mengaplikasi',t:'Perancangan Class Diagram Komprehensif',m:180,x:'Murid menggambar Class Diagram utuh di CASE tools/Draw.io lengkap dengan atribut, tipe data, return value method, dan relasi inheritance (misalnya User diturunkan menjadi Admin dan Kasir). Murid memastikan keselarasan penuh (traceability): setiap use case pada Pertemuan 1 harus terakomodasi oleh method dan class yang dirancang.'},
+{n:6,p:'mengaplikasi',t:'Penyusunan Final Dokumen SRS & Uji Coba Mini Code Generator',m:135,x:'Murid mengompilasi seluruh artefak (Use Case, Activity, Class Diagram) ke dokumen SRS standar IEEE 830 versi ringkas. Sebagai verifikasi, murid mengekspor class diagram menjadi kode kerangka OOP (Java/PHP/TypeScript) untuk membuktikan desain siap diimplementasikan tim programmer.'},
+{n:7,p:'merefleksi',t:'Gelar Karya Analis TeFa, Asesmen Sumatif Quizizz, & Penutup',m:90,x:'Tiap kelompok mempresentasikan SRS final seperti rapat serah terima teknis (technical handover) kepada perwakilan unit TeFa sekolah (45 menit). Seluruh murid mengerjakan kuis sumatif Quizizz 20 menit tentang konsep diagram dan relasi OOP. File final SRS PDF diunggah ke Google Classroom. Murid melakukan refleksi menyeluruh tentang keterampilan profesional sebagai System Analyst. Pertemuan diakhiri dengan evaluasi oleh guru dan doa penutup.'}
+]};
+var filt={p1:'semua',p2:'semua'};
+function dur(m){return m+' menit ('+(m/45)+' JP)'}
+function renderSteps(id){
+  var list=STEPS[id],done=sGet('steps-'+id,{});
+  var total=list.reduce(function(a,s){return a+s.m},0);
+  var bar=$('#bar-'+id);
+  var sums={};list.forEach(function(s){sums[s.p]=(sums[s.p]||0)+s.m});
+  bar.innerHTML=Object.keys(PH).map(function(k){
+    return '<button class="ph-'+k+'" style="flex:'+sums[k]+' 1 0" data-k="'+k+'" aria-pressed="'+(filt[id]===k)+'" title="'+PH[k].l+': '+sums[k]+' menit">'+PH[k].l+' '+sums[k]+'&prime;</button>';
+  }).join('');
+  var html='',last='';
+  list.forEach(function(s){
+    if(filt[id]!=='semua'&&filt[id]!==s.p)return;
+    if(s.p!==last){html+='<div style="margin-top:'+(last?'14':'0')+'px"><span class="label">'+PH[s.p].l+' &middot; '+PH[s.p].s+'</span></div>';last=s.p}
+    var d=!!done[s.n];
+    html+='<article class="step '+s.p+(d?' done':'')+'"><div class="step-n">'+s.n+'</div><div><div class="step-top"><h4>'+esc(s.t)+'</h4><span class="meta">'+dur(s.m)+'</span></div><p>'+esc(s.x)+'</p><label><input type="checkbox" data-n="'+s.n+'" id="c-'+id+'-'+s.n+'"'+(d?' checked':'')+'> Sudah dijalankan</label></div></article>';
+  });
+  if(filt[id]!=='semua')html+='<p class="pnote" style="margin-top:14px">Menampilkan satu fase. Klik blok yang sama untuk kembali ke semua.</p>';
+  $('#steps-'+id).innerHTML=html;
+  var c=Object.keys(done).filter(function(k){return done[k]}).length;
+  $('#pg-'+id).textContent=c+' dari '+list.length+' langkah ditandai';
+  $('#pb-'+id).style.width=(c/list.length*100)+'%';
+}
+['p1','p2'].forEach(function(id){
+  $('#bar-'+id).addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;
+    filt[id]=(filt[id]===b.dataset.k)?'semua':b.dataset.k;renderSteps(id);
+  });
+  $('#steps-'+id).addEventListener('change',function(e){
+    var c=e.target.closest('input[type=checkbox]');if(!c)return;
+    var d=sGet('steps-'+id,{});d[c.dataset.n]=c.checked;sSet('steps-'+id,d);renderSteps(id);
+    var again=$('#c-'+id+'-'+c.dataset.n);if(again)again.focus();
+  });
+  renderSteps(id);
+});
+
+/* use case demo */
+var UC={all:'Semua relasi tampil. Garis putus-putus dengan panah menunjukkan ketergantungan antar use case.',include:'<<include>>: Checkout wajib memanggil Validasi Pembayaran. Tanpa validasi, proses checkout tidak selesai.',extend:'<<extend>>: Cetak Invoice Fisik hanya terjadi bila pelanggan meminta struk. Panah mengarah ke use case yang diperluas.'};
+function ucSet(v){
+  $('#uc-inc').classList.toggle('dim',v==='extend');
+  $('#uc-ext').classList.toggle('dim',v==='include');
+  $('#uc-base').classList.toggle('dim',false);
+  $('#ucCap').textContent=UC[v];
+}
+seg('seg-uc',function(b){ucSet(b.dataset.v)});ucSet('all');
+
+/* activity legend */
+var ACT=[
+{k:'Swimlane',d:'Membagi aktivitas berdasarkan siapa penanggung jawab aksi, misalnya kolom Klien, Kasir, dan Sistem.',s:'<rect x="2" y="2" width="30" height="30" class="sv-lane"/><rect x="34" y="2" width="30" height="30" class="sv-lane"/><rect x="2" y="2" width="62" height="8" class="sv-head"/>'},
+{k:'Initial & Final Node',d:'Titik awal dan titik akhir proses.',s:'<circle cx="16" cy="17" r="7" class="sv-fill"/><circle cx="48" cy="17" r="9" class="sv-hollow"/><circle cx="48" cy="17" r="5" class="sv-fill"/>'},
+{k:'Decision & Merge',d:'Percabangan kondisi (If-Else) dan penggabungan kembali alur cabang.',s:'<polygon points="35,3 55,17 35,31 15,17" class="sv-hollow"/>'},
+{k:'Fork & Join',d:'Memodelkan proses paralel yang berjalan bersamaan (konkurensi). Fork memecah alur, Join menunggu semua alur selesai.',s:'<rect x="6" y="14" width="58" height="6" class="sv-fill"/>'}
+];
+$('#actLg').innerHTML=ACT.map(function(a,i){return '<button data-i="'+i+'" aria-pressed="false"><svg viewBox="0 0 70 34" aria-hidden="true">'+a.s+'</svg><b>'+a.k+'</b></button>'}).join('');
+$('#actCap').textContent='Pilih salah satu notasi untuk melihat fungsinya.';
+$('#actLg').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  $$('#actLg button').forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false')});
+  $('#actCap').textContent=ACT[b.dataset.i].k+': '+ACT[b.dataset.i].d;
+});
+
+/* relation explorer */
+var REL={
+asosiasi:{n:'Association',a:'Kasir',b:'Transaksi',ma:'1',mb:'*',sym:'none',d:'Relasi umum antarkelas. Contoh: seorang Kasir menangani banyak Transaksi.'},
+agregasi:{n:'Aggregation',a:'Kampus',b:'Mahasiswa',ma:'1',mb:'*',sym:'dopen',d:'Hubungan "has-a" yang lemah (wajik berongga). Bagian dapat ada tanpa induknya: Mahasiswa tetap ada walau Kampus dihapus.'},
+komposisi:{n:'Composition',a:'Transaksi',b:'DetailTransaksi',ma:'1',mb:'1..*',sym:'dsolid',d:'Hubungan "part-of" yang kuat (wajik pejal hitam). Anak tidak bisa ada tanpa induk: DetailTransaksi tidak berarti tanpa Transaksi.'},
+generalisasi:{n:'Generalization',a:'User',b:'Kasir',ma:'',mb:'',sym:'tri',d:'Pewarisan (inheritance, "is-a") dengan panah segitiga tertutup ke kelas induk. Kasir mewarisi sifat dari User.'},
+dependensi:{n:'Dependency',a:'Laporan',b:'Transaksi',ma:'',mb:'',sym:'dep',d:'Hubungan penggunaan yang bersifat sementara (garis putus-putus dengan panah). Ilustrasi: Laporan bergantung pada Transaksi saat dibuat.'}
+};
+function relSvg(r){
+  var y=66,x1=134,x2=326,line='',mk='',ma='',mb='';
+  var s=r.sym;
+  if(s==='dopen'){mk='<polygon class="sv-hollow" points="134,66 152,56 170,66 152,76"/>';x1=170}
+  if(s==='dsolid'){mk='<polygon class="sv-fill" points="134,66 152,56 170,66 152,76"/>';x1=170}
+  if(s==='tri'){mk='<polygon class="sv-hollow" points="134,66 154,55 154,77"/>';x1=154}
+  if(s==='dep'){mk='<polyline class="sv-ln" points="310,57 326,66 310,75"/>'}
+  line='<line class="sv-ln" x1="'+x1+'" y1="'+y+'" x2="'+x2+'" y2="'+y+'"'+(s==='dep'?' stroke-dasharray="6 4"':'')+'/>';
+  if(r.ma)ma='<text class="sv-mono" x="'+(x1+6)+'" y="54">'+r.ma+'</text>';
+  if(r.mb)mb='<text class="sv-mono" x="318" y="54" text-anchor="end">'+r.mb+'</text>';
+  function box(x,name){return '<rect class="sv-box" x="'+x+'" y="34" width="120" height="64"/><line class="sv-ln" x1="'+x+'" y1="56" x2="'+(x+120)+'" y2="56"/><line class="sv-ln" x1="'+x+'" y1="78" x2="'+(x+120)+'" y2="78"/><text class="sv-txt" x="'+(x+60)+'" y="50" text-anchor="middle" font-weight="700">'+name+'</text>'}
+  return '<svg viewBox="0 0 460 132" role="img" aria-label="Relasi '+r.n+' antara '+r.a+' dan '+r.b+'">'+box(14,r.a)+box(326,r.b)+line+mk+ma+mb+'</svg>';
+}
+$('#seg-rel').innerHTML=Object.keys(REL).map(function(k,i){return '<button data-k="'+k+'" aria-pressed="'+(i===0)+'">'+REL[k].n+'</button>'}).join('');
+function relShow(k){$('#relSvg').innerHTML=relSvg(REL[k]);$('#relCap').textContent=REL[k].n+': '+REL[k].d}
+seg('seg-rel',function(b){relShow(b.dataset.k)});relShow('asosiasi');
+
+/* lkpd */
+var LK=[
+'Unduh Dokumen Brief Klien TeFa dan Template SRS dari Google Classroom mata pelajaran RPL.',
+'Lakukan sesi wawancara penggalian data (elisitasi) dengan perwakilan unit usaha sekolah / UMKM mitra untuk menginventarisasi proses bisnis yang berjalan.',
+'Gunakan prompt terarah pada generative AI (seperti ChatGPT) untuk merapikan skenario use case naratif dan mengidentifikasi potensi kondisi gagal/alternatif.',
+'Buka aplikasi pemodelan visual (Draw.io/PlantUML/StarUML) di komputer laboratorium SMKN 3 Palu.',
+'Rancang Use Case Diagram lengkap dengan minimal 2 aktor, relasi <<include>>, dan <<extend>>.',
+'Rancang Activity Diagram format swimlane (memisahkan alur aksi pengguna dan sistem) untuk alur transaksi utama.',
+'Rancang Class Diagram komprehensif: minimal 4 kelas entitas bisnis, tipe data atribut, visibilitas (+/-/#), method, kardinalitas, dan relasi composition/inheritance.',
+'Validasi hasil rancangan bersama rekan sekelompok dan pastikan semua diagram sinkron (tidak ada method di class diagram yang bertolak belakang dengan activity diagram).',
+'Ekspor diagram dalam format gambar definisi tinggi (PNG/SVG) dan tempelkan ke Dokumen SRS Tim.',
+'Simpan dokumen akhir dalam PDF dengan penamaan SRS_TeFa_[NamaKelompok]_FaseF.pdf dan serahkan melalui Google Classroom.'
+];
+function renderLk(){
+  var d=sGet('lkpd',{}),c=0;
+  $('#lkList').innerHTML=LK.map(function(t,i){var on=!!d[i];if(on)c++;return '<div class="check'+(on?' on':'')+'"><input type="checkbox" id="lk'+i+'" data-i="'+i+'"'+(on?' checked':'')+'><label for="lk'+i+'">'+esc(t)+'</label></div>'}).join('');
+  $('#lk-pg').textContent=c+' dari '+LK.length+' selesai';
+  $('#lk-bar').style.width=(c/LK.length*100)+'%';
+}
+$('#lkList').addEventListener('change',function(e){
+  var c=e.target.closest('input');if(!c)return;
+  var d=sGet('lkpd',{});d[c.dataset.i]=c.checked;sSet('lkpd',d);renderLk();
+  var a=$('#lk'+c.dataset.i);if(a)a.focus();
+});
+$('#lkReset').addEventListener('click',function(){sSet('lkpd',{});renderLk()});
+renderLk();
+function fname(){var v=$('#kel').value.trim().replace(/[^A-Za-z0-9_\-]+/g,'');return 'SRS_TeFa_'+(v||'NamaKelompok')+'_FaseF.pdf'}
+$('#kel').addEventListener('input',function(){$('#fname').textContent=fname()});
+$('#copyName').addEventListener('click',function(){
+  var t=fname(),msg=$('#copyMsg');
+  function ok(){msg.textContent='Tersalin.'}
+  function fb(){var r=document.createRange();r.selectNodeContents($('#fname'));var s=getSelection();s.removeAllRanges();s.addRange(r);msg.textContent='Teks terpilih, tekan Ctrl+C.'}
+  try{navigator.clipboard.writeText(t).then(ok,fb)}catch(e){fb()}
+});
+
+/* rubrik */
+var RUB=[
+{a:'Elisitasi & Perumusan Kebutuhan Klien (SRS)',c:['Mampu mengidentifikasi seluruh kebutuhan fungsional dan non-fungsional klien secara komprehensif, terstruktur tanpa ambiguitas, serta mendokumentasikannya rapi sesuai standar SRS.','Mampu mengidentifikasi sebagian besar kebutuhan fungsional klien dengan jelas, meskipun deskripsi kebutuhan non-fungsional masih bersifat umum.','Mampu mencatat kebutuhan sistem dasar, namun masih terdapat kerancuan antara kebutuhan pengguna dengan batasan teknis sistem.','Belum mampu menyusun daftar kebutuhan sistem secara mandiri; membutuhkan bimbingan intensif dalam membedakan proses bisnis manual dan digital.']},
+{a:'Ketepatan Notasi Use Case & Activity Diagram',c:['Diagram digambarkan sempurna dengan notasi standar UML; use case memiliki batasan sistem yang jelas, relasi include/extend tepat, dan swimlane selaras dengan logika bisnis.','Diagram benar sesuai standar UML; alur use case dan activity jelas, dengan 1-2 kekeliruan minor pada penempatan relasi atau decision node.','Diagram dapat dipahami, namun ada beberapa kesalahan konvensi notasi (misal tertukar antara aktor dan use case, atau tidak ada initial/final node).','Banyak kesalahan fatal pada notasi dasar UML; logika alur terputus atau tidak menggambarkan proses bisnis klien.']},
+{a:'Ketepatan Perancangan Class Diagram & Konsep OOP',c:['Class Diagram memuat atribut, tipe data, method, visibilitas, dan kardinalitas yang sangat akurat; relasi inheritance, composition, dan aggregation tepat merepresentasikan arsitektur OOP.','Class Diagram terstruktur baik dengan atribut dan method utama; relasi antarkelas logis meskipun kardinalitas atau jenis relasi (agregasi vs komposisi) ada yang kurang tepat.','Struktur kelas sudah dibuat, namun method belum lengkap atau tipe data dan hak akses (visibilitas) sering terabaikan.','Belum mampu memetakan entitas sistem ke class diagram; konsep relasi objek belum teraplikasi.']},
+{a:'Kolaborasi & Pemanfaatan Peranti Digital (Google Classroom & AI)',c:['Sangat aktif berkolaborasi dalam tim TeFa, mengunggah tugas tepat waktu di Google Classroom, dan memakai AI secara kritis dan etis untuk memvalidasi diagram.','Bekerja sama dengan baik dalam tim, aktif merespons tugas di Google Classroom, dan mampu memakai AI sebagai referensi ide pendukung.','Cukup berkontribusi dalam kelompok dan mengumpulkan tugas di Google Classroom, namun keterlibatan dalam perancangan diagram masih pasif.','Tidak menunjukkan kontribusi kerja tim; terlambat mengumpulkan artefak dan tidak memanfaatkan sarana digital yang disediakan.']}
+];
+var LV=['Mahir (4)','Cakap (3)','Layak (2)','Perlu Bimbingan (1)'],SC=[4,3,2,1];
+var rsel=sGet('rub',{});
+function renderRub(){
+  var h='<thead><tr><th>Aspek Penilaian</th>'+LV.map(function(l){return '<th>'+l+'</th>'}).join('')+'</tr></thead><tbody>';
+  RUB.forEach(function(r,i){
+    h+='<tr><td class="asp">'+esc(r.a)+'</td>'+r.c.map(function(t,j){return '<td><button data-i="'+i+'" data-j="'+j+'" aria-pressed="'+(rsel[i]===j)+'">'+esc(t)+'</button></td>'}).join('')+'</tr>';
+  });
+  $('#rub').innerHTML=h+'</tbody>';
+  var tot=0,n=0;Object.keys(rsel).forEach(function(i){tot+=SC[rsel[i]];n++});
+  $('#rTot').textContent=tot+' / 16';
+  var avg=n?tot/n:0;
+  $('#rAvg').textContent=n?avg.toFixed(2).replace('.',','):'0';
+  var lv='Belum dinilai';
+  if(n){var r=Math.round(avg);lv={4:'Mahir',3:'Cakap',2:'Layak',1:'Perlu Bimbingan'}[r]}
+  $('#rLvl').textContent=lv+(n&&n<4?' ('+n+' dari 4 aspek)':'');
+}
+$('#rub').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  rsel[b.dataset.i]=+b.dataset.j;sSet('rub',rsel);renderRub();
+});
+renderRub();
+
+/* sumatif */
+function calcN(){
+  var p=Math.max(0,Math.min(100,+$('#nProduk').value||0)),k=Math.max(0,Math.min(100,+$('#nKuis').value||0));
+  var a=p*0.7+k*0.3;
+  $('#nAkhir').textContent=a.toFixed(1).replace('.',',');
+  $('#nRumus').textContent='(70% x '+p+') + (30% x '+k+') = '+a.toFixed(1).replace('.',',');
+  var pp=p*0.7,kk=k*0.3,t=(pp+kk)||1;
+  $('#nSplit').innerHTML='<div style="flex:'+(pp||0.001)+' 1 0;background:#0a7468">Produk '+pp.toFixed(1)+'</div><div style="flex:'+(kk||0.001)+' 1 0;background:#9a5b00">Kuis '+kk.toFixed(1)+'</div>';
+}
+$('#nProduk').addEventListener('input',calcN);$('#nKuis').addEventListener('input',calcN);calcN();
+
+/* HOTS */
+var REL_OPTS=['Pilih relasi...','<<include>>','<<extend>>','Association','Generalization'];
+var HOTS=[
+{t:'Soal #1',q:'Sebuah sistem POS Teaching Factory SMKN 3 Palu memiliki skenario: setiap kali kasir menekan tombol "Bayar Pesanan", sistem wajib memverifikasi ketersediaan saldo/uang tunai dan otomatis mengurangi stok inventaris di basis data. Namun, sistem hanya mencetak faktur pajak fisik jika pembeli meminta nota ber-NPWP. Berdasarkan skenario tersebut, analisis dan tentukan relasi UML Use Case yang tepat antara "Bayar Pesanan" dengan "Kurangi Stok", serta antara "Bayar Pesanan" dengan "Cetak Faktur Pajak Khusus". Berikan argumentasi teknisnya!',
+ type:'sel',selects:[['"Bayar Pesanan" dan "Kurangi Stok"',1],['"Bayar Pesanan" dan "Cetak Faktur Pajak Khusus"',2]],
+ key:'Relasi antara "Bayar Pesanan" dan "Kurangi Stok" adalah <<include>> karena pengurangan stok merupakan sub-proses wajib yang selalu dieksekusi setiap kali proses bayar pesanan dilakukan agar data inventaris tetap sinkron. Relasi antara "Bayar Pesanan" dan "Cetak Faktur Pajak Khusus" adalah <<extend>> karena pencetakan faktur pajak bersifat opsional/kondisional, hanya terjadi bila pembeli meminta nota ber-NPWP.'},
+{t:'Soal #2',q:'Pada perancangan Class Diagram sistem inventaris TeFa, tim Anda membuat Class "TransaksiPenjualan" dan Class "ItemTransaksi". Analis mendebat apakah hubungan antara kedua class tersebut harus memakai relasi Agregasi (Aggregation) atau Komposisi (Composition). Sebagai Lead Analyst, tentukan relasi mana yang secara arsitektural OOP paling tepat dan jelaskan dampak logisnya jika entitas "TransaksiPenjualan" dihapus dari sistem!',
+ type:'radio',opts:['Agregasi (Aggregation), wajik berongga','Komposisi (Composition), wajik hitam pejal','Generalisasi (Generalization), panah segitiga'],ans:1,
+ key:'Relasi yang paling tepat adalah Komposisi (wajik hitam pejal di sisi TransaksiPenjualan). Secara semantik bisnis, "ItemTransaksi" (baris rincian belanjaan) tidak bermakna dan tidak boleh berdiri sendiri tanpa induk "TransaksiPenjualan" (hubungan "part-of" yang kuat). Dampaknya: jika objek TransaksiPenjualan dihapus (cascade delete), seluruh instance ItemTransaksi yang terikat padanya harus otomatis ikut terhapus dari memori/database demi menjaga integritas data.'},
+{t:'Soal #3',q:'Dalam perancangan Activity Diagram pemesanan produk TeFa secara daring, sebuah pesanan dapat diproses ke tahap pengemasan (packing) HANYA JIKA konfirmasi pembayaran oleh sistem dan verifikasi ketersediaan stok fisik di gudang telah selesai dilakukan secara bersamaan di latar belakang. Jelaskan notasi simbol Activity Diagram apa yang wajib digunakan untuk memodelkan proses awal pemecahan alur tersebut dan penggabungan kembali sebelum proses pengemasan!',
+ type:'radio',opts:['Decision Node dan Merge Node','Fork Node dan Join Node','Swimlane dan Final Node','Initial Node dan Decision Node'],ans:1,
+ key:'Notasi yang wajib dipakai adalah "Fork Node" dan "Join Node" (garis batang pejal / synchronization bar). Fork Node di awal memecah alur tunggal menjadi dua alur paralel yang berjalan bersamaan, yaitu verifikasi pembayaran oleh sistem dan pengecekan stok fisik. Join Node tepat sebelum aktivitas "Pengemasan" menyatukan kembali kedua alur; pengemasan baru berjalan jika dan hanya jika kedua alur paralel telah tuntas.'}
+];
+var hres={};
+function renderHots(){
+  $('#hotsList').innerHTML=HOTS.map(function(h,i){
+    var body='';
+    if(h.type==='sel'){
+      body='<div class="sel">'+h.selects.map(function(s,j){return '<label for="h'+i+'s'+j+'">'+esc(s[0])+'<select id="h'+i+'s'+j+'">'+REL_OPTS.map(function(o,k){return '<option value="'+k+'">'+esc(o)+'</option>'}).join('')+'</select></label>'}).join('')+'</div>';
+    }else{
+      body='<div class="opts" role="radiogroup" aria-label="Pilihan jawaban '+h.t+'">'+h.opts.map(function(o,k){return '<label><input type="radio" name="h'+i+'" value="'+k+'"><span>'+esc(o)+'</span></label>'}).join('')+'</div>';
+    }
+    return '<div class="q" id="q'+i+'"><span class="label">'+h.t+'</span><p class="q-text">'+esc(h.q)+'</p>'+body+'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="check" data-i="'+i+'">Periksa jawaban</button><button class="btn ghost" data-act="key" data-i="'+i+'">Lihat kunci &amp; rubrik</button></div><div id="fb'+i+'" role="status"></div><div id="key'+i+'" hidden class="key"><div class="label">Kunci jawaban &amp; rubrik pedoman</div><p style="margin-top:6px">'+esc(h.key)+'</p></div></div>';
+  }).join('');
+}
+$('#hotsList').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  var i=+b.dataset.i,h=HOTS[i];
+  if(b.dataset.act==='key'){var k=$('#key'+i);k.hidden=!k.hidden;b.textContent=k.hidden?'Lihat kunci & rubrik':'Sembunyikan kunci';return}
+  var ok=false,answered=true;
+  if(h.type==='sel'){
+    var vals=h.selects.map(function(s,j){return +$('#h'+i+'s'+j).value});
+    answered=vals.every(function(v){return v>0});
+    ok=answered&&vals.every(function(v,j){return v===h.selects[j][1]});
+  }else{
+    var r=$('input[name="h'+i+'"]:checked',$('#q'+i));
+    answered=!!r;ok=answered&&(+r.value===h.ans);
+  }
+  var fb=$('#fb'+i);
+  if(!answered){fb.innerHTML='<div class="fb no">Lengkapi pilihan jawaban dulu.</div>';return}
+  hres[i]=ok;
+  fb.innerHTML=ok?'<div class="fb ok"><b>Tepat.</b> Buka kunci jawaban untuk membandingkan argumentasi teknis Anda.</div>':'<div class="fb no"><b>Belum tepat.</b> Coba pikirkan lagi, atau buka kunci jawaban untuk melihat penjelasannya.</div>';
+  var c=Object.keys(hres).filter(function(k){return hres[k]}).length;
+  $('#hSum').textContent=c+' / 3 benar';
+});
+renderHots();
+
+/* simulasi: wawancara klien */
+panels('seg-sim');
+var CATS={alur:'Alur operasional',akses:'Hak akses',keluhan:'Keluhan saat ini',stok:'Stok & inventaris',dokumen:'Struk & dokumen',nonfungsi:'Non-fungsional',laporan:'Laporan'};
+var IQ=[
+{id:1,c:'alur',q:'Ceritakan alur transaksi penjualan dari pembeli datang sampai pulang.',a:'Pembeli membawa barang ke kasir. Kasir mencatat nama barang dan jumlahnya di buku, menghitung total dengan kalkulator, menerima uang, lalu menulis nota tangan.',k:'Kebutuhan fungsional',f:'Sistem mencatat transaksi (barang, jumlah, total) dan menerima pembayaran.',us:'Sebagai Kasir, saya ingin mencatat barang dan jumlah belanjaan agar total dan pembayaran tercatat tanpa buku.'},
+{id:2,c:'akses',q:'Siapa saja yang akan memakai sistem ini?',a:'Kasir yang melayani pembeli, saya sebagai manajer untuk melihat laporan, dan petugas gudang yang menerima barang masuk.',k:'Aktor',f:'Kasir, Manajer Unit, Petugas Gudang.'},
+{id:3,c:'akses',q:'Apa yang boleh dan tidak boleh dilakukan tiap pengguna?',a:'Kasir hanya boleh input transaksi. Hanya saya yang boleh mengubah harga dan melihat laporan keuangan.',k:'Kebutuhan fungsional',f:'Hak akses per peran: ubah harga dan laporan keuangan hanya untuk Manajer Unit.',us:'Sebagai Manajer Unit, saya ingin hanya saya yang dapat mengubah harga dan melihat laporan keuangan agar data tetap terjaga.'},
+{id:4,c:'keluhan',q:'Apa masalah terbesar dengan cara kerja sekarang?',a:'Stok sering selisih karena pencatatan di buku tidak diperbarui, dan di akhir bulan kami butuh dua hari untuk merekap penjualan.',k:'Keluhan',f:'Stok sering selisih dan rekap bulanan lambat.'},
+{id:5,c:'stok',q:'Bagaimana stok dicek saat ada penjualan?',a:'Sekarang kasir menebak dari rak. Seharusnya stok langsung berkurang dan kasir diberi tahu kalau barang habis.',k:'Kebutuhan fungsional',f:'Stok berkurang otomatis saat transaksi dan ada peringatan bila stok habis.',us:'Sebagai Kasir, saya ingin stok berkurang otomatis dan diberi peringatan saat barang habis agar tidak salah menjual.'},
+{id:6,c:'dokumen',q:'Dokumen apa yang dibutuhkan pembeli atau Anda setelah transaksi?',a:'Struk untuk pembeli. Kadang guru atau mitra minta faktur resmi, tapi tidak setiap kali.',k:'Kebutuhan fungsional',f:'Cetak struk selalu; faktur resmi hanya jika diminta.',us:'Sebagai Kasir, saya ingin mencetak struk, dan faktur resmi bila diminta, agar pembeli memperoleh bukti transaksi.',tip:'Perilaku yang hanya terjadi bila diminta cocok dimodelkan dengan relasi <<extend>> pada use case diagram.'},
+{id:7,c:'nonfungsi',q:'Seberapa cepat transaksi harus selesai, dan perangkat apa yang tersedia?',a:'Satu transaksi jangan sampai lama, pembeli antre. Kami hanya punya komputer lab dan koneksi sekolah yang kadang lambat.',k:'Non-fungsional',f:'Respons cepat saat transaksi; harus tetap jalan di komputer lab dengan koneksi tidak stabil.'},
+{id:8,c:'laporan',q:'Laporan apa yang Anda perlukan?',a:'Penjualan harian dan bulanan, serta daftar barang yang hampir habis.',k:'Kebutuhan fungsional',f:'Laporan penjualan harian/bulanan dan daftar stok menipis.',us:'Sebagai Manajer Unit, saya ingin laporan penjualan harian/bulanan dan daftar stok menipis agar rekap tidak memakan dua hari.'},
+{id:9,c:'alur',q:'Bagaimana barang dan harganya dikenali saat ini?',a:'Kasir hafal sebagian harga, sisanya ditempel kertas harga di rak. Kadang harganya beda dengan yang di buku.',k:'Keluhan',f:'Identifikasi barang dan harga belum terstandar.',us:'Sebagai Kasir, saya ingin harga barang tersimpan di sistem agar tidak menebak harga.'},
+{id:10,c:null,q:'Aplikasinya mau pakai warna apa?',a:'Terserah saja, yang penting bisa dipakai.',tip:'Pertanyaan ini belum menggali kebutuhan sistem. Utamakan proses bisnis, pengguna, dan masalah nyata, tampilan bisa dibahas belakangan.'},
+{id:11,c:null,q:'Pasti Anda mau pakai barcode scanner, kan?',a:'Eh, iya, mungkin saja begitu...',tip:'Pertanyaan menggiring. Klien setuju tanpa alasan, sehingga tidak ada kebutuhan yang tergali. Coba tanyakan bagaimana barang dikenali saat ini.'}
+];
+var ivAsked=[];
+function renderIv(focusFrom){
+  var by={};IQ.forEach(function(x){by[x.id]=x});
+  var chat=$('#ivChat'),h='';
+  if(!ivAsked.length)h='<div class="bb cl"><span class="who">Klien</span>Silakan, apa yang ingin Anda ketahui tentang unit usaha kami?</div>';
+  ivAsked.forEach(function(id){var x=by[id];
+    h+='<div class="bb me"><span class="who">Anda</span>'+esc(x.q)+'</div><div class="bb cl"><span class="who">Klien</span>'+esc(x.a)+'</div>';
+    if(x.tip)h+='<div class="bb tip"><b>Catatan analis:</b> '+esc(x.tip)+'</div>';
+  });
+  chat.innerHTML=h;chat.scrollTop=chat.scrollHeight;
+  $('#ivQ').innerHTML=IQ.map(function(x){return '<button data-id="'+x.id+'"'+(ivAsked.indexOf(x.id)>=0?' disabled':'')+'>'+esc(x.q)+'</button>'}).join('');
+  var good=ivAsked.map(function(id){return by[id]}).filter(function(x){return x.c});
+  var cats={};good.forEach(function(x){cats[x.c]=1});
+  var nc=Object.keys(cats).length,tot=Object.keys(CATS).length;
+  $('#ivCov').textContent='Cakupan topik: '+nc+' dari '+tot;
+  $('#ivCnt').textContent=ivAsked.length+' pertanyaan';
+  $('#ivBar').style.width=(nc/tot*100)+'%';
+  var kinds={'Aktor':'blue','Kebutuhan fungsional':'','Non-fungsional':'amber','Keluhan':'red'};
+  if(!good.length)$('#ivFind').innerHTML='<p class="small">Temuan akan tercatat di sini setelah Anda bertanya.</p>';
+  else $('#ivFind').innerHTML='<table class="vis"><thead><tr><th>Jenis</th><th>Temuan</th></tr></thead><tbody>'+good.map(function(x){return '<tr><td><span class="tag '+kinds[x.k]+'">'+esc(x.k)+'</span></td><td>'+esc(x.f)+'</td></tr>'}).join('')+'</tbody></table>'+(nc<tot?'<p class="small" style="margin-top:8px">Topik belum tergali: '+Object.keys(CATS).filter(function(k){return !cats[k]}).map(function(k){return CATS[k]}).join(', ')+'.</p>':'<p class="small" style="margin-top:8px"><b>Semua topik sudah tercakup.</b></p>');
+  if(focusFrom!==undefined){var bs=$$('#ivQ button');var t=bs.filter(function(b,i){return !b.disabled&&i>=focusFrom})[0]||bs.filter(function(b){return !b.disabled})[0];if(t)t.focus()}
+  $('#ivStories').innerHTML='';
+}
+$('#ivQ').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b||b.disabled)return;
+  var idx=$$('#ivQ button').indexOf(b);
+  ivAsked.push(+b.dataset.id);renderIv(idx);
+});
+$('#ivUs').addEventListener('click',function(){
+  var by={};IQ.forEach(function(x){by[x.id]=x});
+  var l=ivAsked.map(function(id){return by[id]}).filter(function(x){return x.us});
+  $('#ivStories').innerHTML=l.length?'<h4>User stories</h4><ol class="us" style="margin-top:8px">'+l.map(function(x){return '<li>'+esc(x.us)+'</li>'}).join('')+'</ol>':'<p class="small">Belum ada temuan yang bisa dijadikan user story. Ajukan pertanyaan tentang alur, hak akses, stok, dokumen, atau laporan.</p>';
+});
+$('#ivReset').addEventListener('click',function(){ivAsked=[];renderIv()});
+renderIv();
+
+/* simulasi: mini code generator */
+var CG={
+User:{a:[['nama','str','#'],['kataSandi','str','-']],m:[['masuk','bool']]},
+Admin:{p:'User',a:[],m:[['kelolaBarang','void']]},
+Kasir:{p:'User',a:[],m:[['inputTransaksi','Transaksi']]},
+Barang:{a:[['kode','str','-'],['nama','str','-'],['harga','dec','-'],['stok','int','-']],m:[['kurangiStok','void']]},
+Transaksi:{a:[['tanggal','date','-'],['total','dec','-']],c:'DetailTransaksi',m:[['hitungTotal','dec']]},
+DetailTransaksi:{a:[['jumlah','int','-'],['subtotal','dec','-']],s:'Barang',m:[]}
+};
+var CGO=['User','Admin','Kasir','Barang','Transaksi','DetailTransaksi'];
+var TY={ts:{str:'string',int:'number',dec:'number',bool:'boolean',void:'void',date:'Date'},java:{str:'String',int:'int',dec:'double',bool:'boolean',void:'void',date:'LocalDate'},php:{str:'string',int:'int',dec:'float',bool:'bool',void:'void',date:'string'}};
+var VIS={'-':'private','#':'protected','+':'public'};
+var cgSel=sGet('cgSel',null)||{User:true,Admin:false,Kasir:true,Barang:true,Transaksi:true,DetailTransaksi:true};
+var cgLang='ts';
+function cgTy(l,t,sel){return TY[l][t]||(sel[t]?t:TY[l].void)}
+function genCode(l,sel){
+  var out=[],hints=[],ind='  ';
+  if(l==='java'||l==='php')ind='    ';
+  CGO.forEach(function(n){
+    if(!sel[n])return;
+    var c=CG[n],ext='',cm='';
+    if(c.p){if(sel[c.p]){ext=' extends '+c.p;cm='  // Generalization'}else hints.push('Generalization '+n+' ke '+c.p+' tidak dibuat karena '+c.p+' belum dipilih.')}
+    var L=[];
+    L.push('class '+n+ext+' {'+cm);
+    c.a.forEach(function(a){
+      var v=VIS[a[2]],t=cgTy(l,a[1],sel);
+      L.push(ind+(l==='ts'?v+' '+a[0]+': '+t+';':l==='java'?v+' '+t+' '+a[0]+';':v+' '+t+' $'+a[0]+';'));
+    });
+    if(c.c){
+      if(sel[c.c])L.push(ind+(l==='ts'?'private items: '+c.c+'[] = [];   // Composition 1..*':l==='java'?'private List<'+c.c+'> items = new ArrayList<>();   // Composition 1..*':'private array $items = [];   // Composition 1..* ('+c.c+')'));
+      else hints.push('Composition '+n+' ke '+c.c+' tidak dibuat karena '+c.c+' belum dipilih.');
+    }
+    if(c.s){
+      if(sel[c.s])L.push(ind+(l==='ts'?'private '+(c.s.charAt(0).toLowerCase()+c.s.slice(1))+': '+c.s+';   // Association':l==='java'?'private '+c.s+' '+(c.s.charAt(0).toLowerCase()+c.s.slice(1))+';   // Association':'private '+c.s+' $'+(c.s.charAt(0).toLowerCase()+c.s.slice(1))+';   // Association'));
+      else hints.push('Association '+n+' ke '+c.s+' tidak dibuat karena '+c.s+' belum dipilih.');
+    }
+    if(L.length>1&&c.m.length)L.push('');
+    c.m.forEach(function(m,i){
+      var t=cgTy(l,m[1],sel),body=m[1]==='void'?'// TODO: implementasi':(l==='ts'?'throw new Error("TODO");':l==='java'?'throw new UnsupportedOperationException("TODO");':'throw new Exception("TODO");');
+      if(m[1]!=='void'&&m[1]!==t&&!TY[l][m[1]])hints.push('Method '+n+'.'+m[0]+'() mengembalikan void karena '+m[1]+' belum dipilih.');
+      if(l==='ts'){L.push(ind+'public '+m[0]+'(): '+t+' {');}
+      else if(l==='java'){L.push(ind+'public '+t+' '+m[0]+'() {');}
+      else L.push(ind+'public function '+m[0]+'(): '+t+' {');
+      L.push(ind+ind+body);L.push(ind+'}');
+    });
+    L.push('}');
+    out.push(L.join('\n'));
+  });
+  var head=l==='java'?'import java.time.LocalDate;\nimport java.util.ArrayList;\nimport java.util.List;\n\n':l==='php'?'<?php\n\n':'';
+  return {text:out.length?head+out.join('\n\n'):'// Pilih minimal satu kelas.',hints:hints};
+}
+function renderCg(){
+  var r=genCode(cgLang,cgSel);
+  $('#cgOut').innerHTML='<code></code>';$('#cgOut code').textContent=r.text;
+  $('#cgHint').textContent=r.hints.length?r.hints.join(' '):'Semua relasi dari kelas terpilih tercakup.';
+}
+$('#cgSel').innerHTML=CGO.map(function(n){return '<label><input type="checkbox" data-n="'+n+'"'+(cgSel[n]?' checked':'')+'>'+n+'</label>'}).join('');
+$('#cgSel').addEventListener('change',function(e){var c=e.target.closest('input');if(!c)return;cgSel[c.dataset.n]=c.checked;sSet('cgSel',cgSel);renderCg()});
+seg('seg-lang',function(b){cgLang=b.dataset.l;renderCg()});
+$('#cgCopy').addEventListener('click',function(){
+  var msg=$('#cgMsg'),t=$('#cgOut').textContent;
+  function ok(){msg.textContent='Tersalin.'}
+  function fb(){var r=document.createRange();r.selectNodeContents($('#cgOut'));var s=getSelection();s.removeAllRanges();s.addRange(r);msg.textContent='Kode terpilih, tekan Ctrl+C.'}
+  try{navigator.clipboard.writeText(t).then(ok,fb)}catch(e){fb()}
+});
+renderCg();
+
+route();
+})();
+</script>
+
+</body></html>
