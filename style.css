@@ -1,0 +1,1173 @@
+/* ==========================================================================
+   DATAQUEST: DATABASE DESIGNER ADVENTURE
+   16:9 Zero-Scroll Interactive Learning Game Stylesheet (1920 x 1080 Design)
+   ========================================================================== */
+
+:root {
+  --stage-w: 1920px;
+  --stage-h: 1080px;
+  --stage-scale: 0.65;
+
+  /* Brand Palette (matching Design Scene UI Collage) */
+  --bg-deep: #06142e;
+  --bg-navy: #0a2351;
+  --bg-royal: #103a80;
+  --bg-panel-dark: rgba(10, 34, 78, 0.86);
+  --bg-panel-glass: rgba(16, 54, 118, 0.78);
+  --bg-card-light: #f4f9ff;
+  --bg-card-white: #ffffff;
+  --bg-card-soft: #e4f0ff;
+
+  --border-cyan: rgba(96, 197, 255, 0.55);
+  --border-light: #bfd9fb;
+  --glow-cyan: 0 0 24px rgba(56, 189, 248, 0.45);
+  --glow-gold: 0 8px 24px rgba(245, 158, 11, 0.45);
+
+  --accent-cyan: #38bdf8;
+  --accent-blue: #0284c7;
+  --accent-indigo: #2563eb;
+  --accent-gold-top: #ffe066;
+  --accent-gold-bot: #f59e0b;
+  --accent-green: #10b981;
+  --accent-green-dark: #059669;
+  --accent-red: #ef4444;
+  --accent-purple: #8b5cf6;
+
+  --text-light: #f8fafc;
+  --text-Soft: #cbd5e1;
+  --text-dark: #0f2547;
+  --text-muted: #476288;
+
+  --radius-xl: 24px;
+  --radius-lg: 18px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+
+  --font-sans: 'Segoe UI', 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+}
+
+input, textarea, pre, code, .selectable {
+  user-select: text;
+}
+
+html, body {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden !important; /* Strict 0 vertical/horizontal scroll */
+  background: radial-gradient(circle at 50% 35%, #0e326e 0%, #050f24 100%);
+  font-family: var(--font-sans);
+  color: var(--text-light);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ==========================================================================
+   16:9 VIEWPORT SHELL & PROPORTIONAL STAGE
+   ========================================================================== */
+#viewport-shell {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.14), transparent 45%),
+    radial-gradient(circle at 80% 80%, rgba(37, 99, 235, 0.18), transparent 50%),
+    #040d21;
+}
+
+#game-stage {
+  position: relative;
+  width: var(--stage-w);
+  height: var(--stage-h);
+  transform: scale(var(--stage-scale));
+  transform-origin: center center;
+  background: linear-gradient(155deg, #092049 0%, #0d3272 52%, #081c42 100%);
+  border: 2px solid rgba(96, 197, 255, 0.45);
+  border-radius: 22px;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.75), inset 0 0 60px rgba(56, 189, 248, 0.12);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+/* Subtle futuristic background grid inside stage */
+.stage-bg-layer {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0.34;
+  transition: opacity 0.45s ease, background-image 0.45s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.stage-grid-overlay {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(56, 189, 248, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.06) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ==========================================================================
+   PORTRAIT ORIENTATION GUARD (Mobile Portrait Warning)
+   ========================================================================== */
+#portrait-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: linear-gradient(160deg, #061533 0%, #0d3270 100%);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px;
+  gap: 20px;
+}
+
+#portrait-overlay.visible {
+  display: flex;
+}
+
+.rotate-phone-icon {
+  width: 92px;
+  height: 92px;
+  border: 4px solid var(--accent-cyan);
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  animation: rotatePhoneAnim 2.2s ease-in-out infinite;
+  box-shadow: var(--glow-cyan);
+}
+
+@keyframes rotatePhoneAnim {
+  0%, 20% { transform: rotate(0deg); }
+  60%, 85% { transform: rotate(-90deg); }
+  100% { transform: rotate(0deg); }
+}
+
+/* ==========================================================================
+   CONSISTENT 16:9 HEADER (Logo, Mission Name, Level, XP, Controls)
+   ========================================================================== */
+#game-header {
+  position: relative;
+  z-index: 10;
+  height: 82px;
+  padding: 0 32px;
+  background: linear-gradient(90deg, rgba(7, 24, 58, 0.94) 0%, rgba(15, 48, 105, 0.9) 50%, rgba(7, 24, 58, 0.94) 100%);
+  border-bottom: 2px solid rgba(96, 197, 255, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  backdrop-filter: blur(12px);
+}
+
+.brand-cluster {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.brand-logo-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-light);
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 12px;
+  transition: background 0.2s;
+}
+
+.brand-logo-btn:hover {
+  background: rgba(56, 189, 248, 0.14);
+}
+
+.db-logo-icon {
+  width: 44px;
+  height: 44px;
+  filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.6));
+}
+
+.brand-title {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  background: linear-gradient(180deg, #ffffff 20%, #7dd3fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.header-divider {
+  width: 2px;
+  height: 34px;
+  background: rgba(125, 211, 252, 0.3);
+}
+
+.scene-badge-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(14, 65, 140, 0.72);
+  border: 1.5px solid rgba(96, 197, 255, 0.5);
+  padding: 7px 16px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.scene-num-tag {
+  background: linear-gradient(180deg, #38bdf8, #0284c7);
+  color: #fff;
+  font-weight: 800;
+  font-size: 15px;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.scene-name-text {
+  font-size: 17.5px;
+  font-weight: 700;
+  color: #e0f2fe;
+  white-space: nowrap;
+}
+
+.principle-chip {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #fde68a;
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  padding: 5px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* Right cluster: Player chip, Level, XP, Audio, Map */
+.hud-cluster {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.hud-stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: rgba(8, 28, 66, 0.85);
+  border: 1.5px solid rgba(96, 197, 255, 0.42);
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 16px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.hud-stat-pill .icon-star {
+  color: #fbbf24;
+  font-size: 20px;
+}
+
+.xp-bar-mini {
+  width: 96px;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.xp-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #38bdf8, #fbbf24);
+  border-radius: 999px;
+  transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.hud-icon-btn {
+  height: 44px;
+  padding: 0 15px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(96, 197, 255, 0.45);
+  background: rgba(15, 52, 115, 0.72);
+  color: #e0f2fe;
+  font-size: 16px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.hud-icon-btn:hover {
+  background: rgba(37, 99, 235, 0.85);
+  border-color: #7dd3fc;
+  transform: translateY(-1px);
+}
+
+.hud-icon-btn.speaking {
+  border-color: #fbbf24;
+  box-shadow: 0 0 14px rgba(251, 191, 36, 0.5);
+}
+
+/* ==========================================================================
+   MAIN SCENE CONTAINER (Strictly fixed height between Header & Footer)
+   ========================================================================== */
+#scene-root {
+  position: relative;
+  z-index: 5;
+  flex: 1;
+  height: calc(1080px - 82px - 84px); /* 914px exact workspace */
+  width: 100%;
+  padding: 22px 32px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+#scene-root.full-bleed {
+  height: calc(1080px - 82px);
+  padding: 0;
+}
+
+/* ==========================================================================
+   CONSISTENT 16:9 FOOTER (Kembali, Instruksi Singkat, Petunjuk, Lanjutkan)
+   ========================================================================== */
+#game-footer {
+  position: relative;
+  z-index: 10;
+  height: 84px;
+  padding: 0 32px;
+  background: linear-gradient(90deg, rgba(6, 20, 48, 0.95) 0%, rgba(12, 40, 90, 0.92) 50%, rgba(6, 20, 48, 0.95) 100%);
+  border-top: 2px solid rgba(96, 197, 255, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.footer-instruction-box {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(15, 52, 114, 0.65);
+  border: 1px solid rgba(125, 211, 252, 0.35);
+  padding: 10px 20px;
+  border-radius: 14px;
+  max-width: 1120px;
+}
+
+.footer-instruction-label {
+  background: #0284c7;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 8px;
+  letter-spacing: 0.6px;
+  white-space: nowrap;
+}
+
+.footer-instruction-text {
+  font-size: 17px;
+  color: #f0f9ff;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.footer-nav-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* ==========================================================================
+   BUTTONS (Gold CTA, Cyan Action, Secondary Ghost, Success)
+   ========================================================================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-family: var(--font-sans);
+  font-size: 18px;
+  font-weight: 800;
+  padding: 12px 26px;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease, opacity 0.2s;
+  white-space: nowrap;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.35);
+}
+
+.btn-gold {
+  background: linear-gradient(180deg, #ffe47a 0%, #f59e0b 100%);
+  color: #0b1930;
+  border: 2px solid #fef08a;
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.45);
+}
+
+.btn-gold:hover:not(:disabled) {
+  filter: brightness(1.06);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px rgba(245, 158, 11, 0.6);
+}
+
+.btn-cyan {
+  background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+  color: #ffffff;
+  border: 2px solid #7dd3fc;
+  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.45);
+}
+
+.btn-cyan:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-2px);
+}
+
+.btn-green {
+  background: linear-gradient(180deg, #34d399 0%, #059669 100%);
+  color: #ffffff;
+  border: 2px solid #6ee7b7;
+  box-shadow: 0 6px 18px rgba(5, 150, 105, 0.45);
+}
+
+.btn-green:hover:not(:disabled) {
+  filter: brightness(1.07);
+  transform: translateY(-2px);
+}
+
+.btn-ghost {
+  background: rgba(15, 48, 105, 0.72);
+  color: #e0f2fe;
+  border: 1.5px solid rgba(125, 211, 252, 0.48);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: rgba(30, 78, 158, 0.88);
+  border-color: #bae6fd;
+}
+
+.btn-hint {
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.26), rgba(217, 119, 6, 0.34));
+  color: #fde68a;
+  border: 1.5px solid rgba(251, 191, 36, 0.65);
+}
+
+.btn-hint:hover:not(:disabled) {
+  background: rgba(245, 158, 11, 0.42);
+}
+
+.btn-lg {
+  font-size: 23px;
+  padding: 18px 42px;
+  border-radius: 18px;
+}
+
+.btn-sm {
+  font-size: 15px;
+  padding: 8px 16px;
+  border-radius: 10px;
+}
+
+/* ==========================================================================
+   COMMON CARDS, GLASS PANELS & LAYOUT GRIDS
+   ========================================================================== */
+.glass-panel {
+  background: linear-gradient(165deg, rgba(14, 49, 108, 0.86) 0%, rgba(8, 28, 68, 0.9) 100%);
+  border: 2px solid var(--border-cyan);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(12px);
+}
+
+.light-card {
+  background: linear-gradient(180deg, #ffffff 0%, #eef6ff 100%);
+  color: var(--text-dark);
+  border: 2px solid #b8d8fc;
+  border-radius: var(--radius-xl);
+  box-shadow: 0 12px 32px rgba(5, 20, 52, 0.28);
+}
+
+.panel-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 22px;
+  background: linear-gradient(90deg, #0ea5e9 0%, #2563eb 100%);
+  color: #fff;
+  font-size: 20px;
+  font-weight: 800;
+  border-radius: 20px 20px 0 0;
+}
+
+/* Character & Speech Bubble Layout */
+.character-column {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  position: relative;
+  height: 100%;
+}
+
+.character-frame {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  border: 2px solid rgba(125, 211, 252, 0.5);
+  background: radial-gradient(circle at 50% 30%, #1d4ed8 0%, #091e46 100%);
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
+}
+
+.character-frame img,
+.character-frame svg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.character-nameplate {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  right: 14px;
+  background: rgba(7, 23, 56, 0.9);
+  border: 1.5px solid rgba(125, 211, 252, 0.55);
+  border-radius: 14px;
+  padding: 10px 16px;
+  text-align: center;
+  backdrop-filter: blur(8px);
+}
+
+.character-nameplate strong {
+  display: block;
+  font-size: 19px;
+  color: #fff;
+}
+
+.character-nameplate span {
+  font-size: 14px;
+  color: #7dd3fc;
+  font-weight: 600;
+}
+
+.speech-bubble {
+  background: #ffffff;
+  color: var(--text-dark);
+  border: 2.5px solid #60a5fa;
+  border-radius: 22px;
+  padding: 20px 26px;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28);
+  position: relative;
+  font-size: 19px;
+  line-height: 1.5;
+}
+
+.speech-bubble .speaker-tag {
+  display: inline-block;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-weight: 800;
+  font-size: 14px;
+  padding: 3px 12px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+}
+
+/* ==========================================================================
+   FEEDBACK BANNERS, TOASTS & FLOATING XP
+   ========================================================================== */
+.feedback-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px;
+  border-radius: 16px;
+  font-size: 17px;
+  font-weight: 700;
+  animation: popIn 0.26s ease-out;
+}
+
+.feedback-banner.success {
+  background: linear-gradient(90deg, #dcfce7 0%, #bbf7d0 100%);
+  color: #065f46;
+  border: 2px solid #10b981;
+}
+
+.feedback-banner.error {
+  background: linear-gradient(90deg, #fee2e2 0%, #fecaca 100%);
+  color: #991b1b;
+  border: 2px solid #ef4444;
+}
+
+.feedback-banner.hint {
+  background: linear-gradient(90deg, #fef3c7 0%, #fde68a 100%);
+  color: #78350f;
+  border: 2px solid #f59e0b;
+}
+
+@keyframes popIn {
+  0% { opacity: 0; transform: translateY(8px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+#toast-container {
+  position: absolute;
+  top: 96px;
+  right: 36px;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.xp-toast {
+  background: linear-gradient(135deg, #065f46 0%, #047857 100%);
+  border: 2px solid #34d399;
+  color: #fff;
+  padding: 12px 22px;
+  border-radius: 16px;
+  font-size: 19px;
+  font-weight: 800;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: slideToast 2.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes slideToast {
+  0% { opacity: 0; transform: translateX(40px) scale(0.9); }
+  12%, 80% { opacity: 1; transform: translateX(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-20px) scale(0.95); }
+}
+
+/* ==========================================================================
+   SCENE 01: OPENING – DUNIA DATAQUEST
+   ========================================================================== */
+.opening-layout {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 440px 1fr 380px;
+  align-items: center;
+  padding: 28px 54px;
+  gap: 32px;
+  position: relative;
+}
+
+.opening-hero-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 20px;
+  background: radial-gradient(circle, rgba(10, 38, 88, 0.85) 0%, rgba(6, 20, 48, 0.68) 100%);
+  border: 2px solid rgba(96, 197, 255, 0.45);
+  border-radius: 34px;
+  padding: 42px 48px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6), inset 0 0 40px rgba(56, 189, 248, 0.16);
+  backdrop-filter: blur(10px);
+}
+
+.hero-emblem-wrap {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.hero-title-giant {
+  font-size: 76px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  line-height: 1;
+  background: linear-gradient(180deg, #ffffff 0%, #bae6fd 52%, #38bdf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 6px 18px rgba(2, 132, 199, 0.65));
+}
+
+.hero-subtitle-banner {
+  background: linear-gradient(90deg, #0284c7, #2563eb, #0284c7);
+  border: 2px solid #7dd3fc;
+  padding: 8px 32px;
+  border-radius: 999px;
+  font-size: 24px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.8px;
+}
+
+.hero-tagline {
+  font-size: 23px;
+  color: #e0f2fe;
+  max-width: 640px;
+  line-height: 1.45;
+}
+
+.opening-bottom-dock {
+  display: flex;
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.pillar-principles-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 28px;
+}
+
+.pillar-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(15, 54, 118, 0.65);
+  border: 1px solid rgba(125, 211, 252, 0.35);
+  padding: 13px 16px;
+  border-radius: 14px;
+}
+
+/* ==========================================================================
+   SCENE 02: CHARACTER SETUP
+   ========================================================================== */
+.char-setup-grid {
+  display: grid;
+  grid-template-columns: 440px 460px 1fr;
+  gap: 28px;
+  height: 100%;
+}
+
+.avatar-grid-select {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  padding: 20px;
+}
+
+.avatar-option-card {
+  background: #f0f7ff;
+  border: 3px solid #bfdbfe;
+  border-radius: 18px;
+  padding: 12px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.18s ease;
+  color: var(--text-dark);
+}
+
+.avatar-option-card:hover {
+  transform: translateY(-3px);
+  border-color: #38bdf8;
+}
+
+.avatar-option-card.selected {
+  background: linear-gradient(180deg, #dbeafe 0%, #bfdbfe 100%);
+  border-color: #0284c7;
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.35);
+}
+
+.avatar-thumb {
+  width: 124px;
+  height: 124px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #0f295c;
+}
+
+.avatar-thumb img, .avatar-thumb svg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.form-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.form-field-group label {
+  font-size: 17px;
+  font-weight: 800;
+  color: #1e3a8a;
+}
+
+.dq-input, .dq-select, .dq-textarea {
+  width: 100%;
+  padding: 14px 18px;
+  font-size: 19px;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  color: #0f172a;
+  background: #ffffff;
+  border: 2px solid #93c5fd;
+  border-radius: 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.dq-input:focus, .dq-select:focus, .dq-textarea:focus {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.2);
+}
+
+/* ==========================================================================
+   DRAG & DROP + CLICK-TO-PLACE INTERACTIVE CARDS (Scenes 05, 06, 09, 10)
+   ========================================================================== */
+.draggable-chip {
+  background: linear-gradient(180deg, #ffffff 0%, #eff6ff 100%);
+  color: #0f2547;
+  border: 2px solid #60a5fa;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: grab;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(15, 37, 71, 0.12);
+  transition: all 0.16s ease;
+}
+
+.draggable-chip:hover {
+  transform: translateY(-2px);
+  border-color: #0284c7;
+  box-shadow: 0 8px 18px rgba(2, 132, 199, 0.24);
+}
+
+.draggable-chip.selected-chip {
+  background: linear-gradient(180deg, #fef08a 0%, #fde047 100%);
+  border-color: #d97706;
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.35);
+}
+
+.draggable-chip.correct-chip {
+  background: #dcfce7;
+  border-color: #10b981;
+  color: #065f46;
+}
+
+.draggable-chip.wrong-chip {
+  background: #fee2e2;
+  border-color: #ef4444;
+  color: #991b1b;
+}
+
+.drop-zone-box {
+  background: rgba(239, 246, 255, 0.92);
+  border: 2.5px dashed #60a5fa;
+  border-radius: 16px;
+  padding: 12px;
+  min-height: 110px;
+  transition: all 0.18s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.drop-zone-box.drag-over,
+.drop-zone-box.ready-target {
+  background: #dbeafe;
+  border-color: #0284c7;
+  border-style: solid;
+  box-shadow: inset 0 0 0 3px rgba(2, 132, 199, 0.2);
+}
+
+/* ==========================================================================
+   DATABASE TABLE CARDS (Scenes 07, 08, 09, 10)
+   ========================================================================== */
+.schema-table-card {
+  background: #ffffff;
+  border: 2.5px solid #60a5fa;
+  border-radius: 18px;
+  overflow: hidden;
+  color: var(--text-dark);
+  box-shadow: 0 10px 26px rgba(8, 25, 62, 0.22);
+}
+
+.schema-table-head {
+  padding: 12px 18px;
+  font-size: 18px;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 0.6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.schema-table-head.blue { background: linear-gradient(90deg, #0284c7, #2563eb); }
+.schema-table-head.purple { background: linear-gradient(90deg, #7c3aed, #db2777); }
+.schema-table-head.amber { background: linear-gradient(90deg, #d97706, #ea580c); }
+.schema-table-head.green { background: linear-gradient(90deg, #059669, #0d9488); }
+
+.schema-col-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.schema-col-row:last-child {
+  border-bottom: none;
+}
+
+.key-badge {
+  font-size: 12px;
+  font-weight: 900;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+.key-badge.pk {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #f59e0b;
+}
+
+.key-badge.fk {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border: 1px solid #60a5fa;
+}
+
+/* ==========================================================================
+   ERD BLUEPRINT CANVAS (Scene 08)
+   ========================================================================== */
+.erd-blueprint-canvas {
+  background-color: #f8fbff;
+  background-image:
+    linear-gradient(#e2eefc 1px, transparent 1px),
+    linear-gradient(90deg, #e2eefc 1px, transparent 1px);
+  background-size: 28px 28px;
+  border: 2.5px solid #60a5fa;
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+  color: var(--text-dark);
+}
+
+.erd-diamond {
+  width: 146px;
+  height: 88px;
+  background: linear-gradient(180deg, #dcfce7 0%, #86efac 100%);
+  border: 3px solid #16a34a;
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 15px;
+  color: #064e3b;
+  cursor: pointer;
+  transition: transform 0.18s;
+}
+
+.erd-diamond:hover {
+  transform: scale(1.06);
+}
+
+/* ==========================================================================
+   SQL PLAYGROUND IDE (Scene 11 & 12)
+   ========================================================================== */
+.sql-ide-box {
+  background: #071329;
+  border: 2px solid #38bdf8;
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+}
+
+.sql-editor-area {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  background: #061024;
+  overflow: hidden;
+}
+
+.sql-line-nums {
+  background: #0b1c3d;
+  color: #64748b;
+  font-family: var(--font-mono);
+  font-size: 17px;
+  line-height: 1.65;
+  padding: 16px 8px;
+  text-align: right;
+  border-right: 1px solid rgba(56, 189, 248, 0.22);
+}
+
+.sql-textarea {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  color: #e2e8f0;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  line-height: 1.65;
+  padding: 16px 20px;
+}
+
+.data-grid-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+  color: #0f2547;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.data-grid-table th {
+  background: #0284c7;
+  color: #fff;
+  text-align: left;
+  padding: 10px 14px;
+  font-weight: 800;
+}
+
+.data-grid-table td {
+  padding: 9px 14px;
+  border-bottom: 1px solid #e2e8f0;
+  font-weight: 600;
+}
+
+.data-grid-table tr:nth-child(even) td {
+  background: #f1f7ff;
+}
+
+/* ==========================================================================
+   MODALS (Mission Map, Certificate, Audio, Teacher Report, Mission Recap)
+   ========================================================================== */
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 120;
+  background: rgba(3, 12, 30, 0.82);
+  backdrop-filter: blur(8px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 36px;
+}
+
+.modal-backdrop.open {
+  display: flex;
+  animation: popIn 0.2s ease-out;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 1280px;
+  max-height: 940px;
+  background: linear-gradient(180deg, #0d2b63 0%, #07193c 100%);
+  border: 2.5px solid #60a5fa;
+  border-radius: 26px;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.75);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-body {
+  padding: 28px 34px;
+  overflow-y: auto;
+}
+
+/* Certificate Print Styling */
+.certificate-paper {
+  background: linear-gradient(135deg, #fffdf5 0%, #fef9e7 100%);
+  color: #0f2547;
+  border: 10px double #d97706;
+  border-radius: 20px;
+  padding: 40px 56px;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+}
+
+#printable-area {
+  display: none;
+}
+
+@media print {
+  html, body {
+    overflow: visible !important;
+    background: #fff !important;
+  }
+  #viewport-shell, #portrait-overlay {
+    display: none !important;
+  }
+  #printable-area {
+    display: block !important;
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: auto;
+    background: #fff;
+    padding: 24px;
+  }
+  #printable-area, #printable-area * {
+    visibility: visible !important;
+  }
+}
